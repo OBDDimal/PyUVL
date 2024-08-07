@@ -1,0 +1,44 @@
+//This file defines the grammar for UVL and is under development. Build according to this guideline: https://lezer.codemirror.net/docs/guide/#operators
+
+//shift/reduce conflict
+//@precedence { Mandatory @left, Optional @left }
+
+@top UVL { Key* Constraints?}
+
+Constraints { Const*  }
+Const {Or | DirectedCall | UndirectedCall }
+Or {String "|" String}
+DirectedCall { "DirectedCall" "=>" String }
+UndirectedCall { "UndirectedCall" "=>" String "|" String }
+
+
+Key { String Condition }
+//shift/reduce conflict
+Condition { ("mandatory" Mandatory)? ( "optional" Optional)? }
+Mandatory {list<Key>* }
+Optional {list<Key>* }
+//
+//Condition { !Mandatory ( !Optional }
+//Mandatory { "mandatory" list<Key>* }
+//Optional { "optional" list<Key>* }
+
+//or and alternative
+//...
+String { string }
+
+@tokens {
+  string { '"' char* '"' }
+  char { $[\u{20}\u{21}\u{23}-\u{5b}\u{5d}-\u{10ffff}] }
+
+  whitespace { $[ \n\r\t] }
+
+  "{" "}" "[" "]"
+}
+
+@skip { whitespace }
+list<item> { item ("," item)* }
+
+@external propSource jsonHighlighting from "./highlight"
+
+@detectDelim
+
