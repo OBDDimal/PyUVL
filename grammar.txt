@@ -1,44 +1,61 @@
-//This file defines the grammar for UVL and is under development. Build according to this guideline: https://lezer.codemirror.net/docs/guide/#operators
+//this grammar builds a tree for UVL and is still under development 
 
-//shift/reduce conflict
-//@precedence { Mandatory @left, Optional @left }
+@precedence { FeatureName @left, FeatureList }
 
-@top UVL { Key* Constraints?}
+@top FeatureModel { FeatureName FeatureList}
 
-Constraints { Const*  }
-Const {Or | DirectedCall | UndirectedCall }
-Or {String "|" String}
-DirectedCall { "DirectedCall" "=>" String }
-UndirectedCall { "UndirectedCall" "=>" String "|" String }
-
-
-Key { String Condition }
-//shift/reduce conflict
-Condition { ("mandatory" Mandatory)? ( "optional" Optional)? }
-Mandatory {list<Key>* }
-Optional {list<Key>* }
-//
-//Condition { !Mandatory ( !Optional }
-//Mandatory { "mandatory" list<Key>* }
-//Optional { "optional" list<Key>* }
-
-//or and alternative
-//...
-String { string }
-
-@tokens {
-  string { '"' char* '"' }
-  char { $[\u{20}\u{21}\u{23}-\u{5b}\u{5d}-\u{10ffff}] }
-
-  whitespace { $[ \n\r\t] }
-
-  "{" "}" "[" "]"
+FeatureList {
+    Feature3*
 }
 
+Feature {
+    !FeatureName "{" FeatureType "}"
+    (mandatory !FeatureList | optional !FeatureList | alternative !FeatureList | or !FeatureList)?
+}
+Feature2 {
+    !FeatureName "{" FeatureType "}" 
+    ((Mandatory !FeatureList)? (Optional !FeatureList)?) | ((Alternative !FeatureList)? (Or !FeatureList)?)
+}
+Feature3 {
+    (FeatureName "{" FeatureType "}"
+    (Mandatory | Optional | Alternative | Or) !FeatureList) | String
+}
+
+FeatureName {
+    String
+}
+
+ItemList { list<String>?  }
+
+
+FeatureType {
+    "abstract"
+}
+
+Constraint {
+    ConstraintExpr*
+}
+
+ConstraintExpr {
+    FeatureName 
+    ("|" | "=>" | "&") 
+    FeatureName
+}
+
+@tokens {
+  Mandatory { "mandatory" }
+  Optional { "optional" }
+  Alternative { "alternative" }
+  Or { "or" }
+  String { @asciiLetter+ }
+  @precedence { Mandatory, Optional,Alternative, Or ,String }
+
+	whitespace { $[ \n\r\t] }
+  //spaces after cleanup
+}
 @skip { whitespace }
-list<item> { item ("," item)* }
+list<item> { item* }
 
 @external propSource jsonHighlighting from "./highlight"
 
 @detectDelim
-
