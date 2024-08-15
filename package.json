@@ -1,8 +1,24 @@
 {
+  "name": "UVL_test",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "private": true,
   "dependencies": {
-    "lit": "^3.0.0",
-    "@lit/reactive-element": "^2.0.0",
-    "lit-element": "^4.0.0",
-    "lit-html": "^3.0.0"
+    "@codemirror/basic-setup": "^0.20.0",
+    "@codemirror/lang-javascript": "^6.2.2",
+    "@codemirror/language": "^6.10.2",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.32.0",
+    "codemirror": "^6.0.1",
+    "lezer": "^0.13.5",
+    "lit": "^3.2.0"
+  },
+  "devDependencies": {
+    "raw-loader": "^4.0.2"
   }
 }
