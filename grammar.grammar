@@ -1,0 +1,57 @@
+@precedence { FeatureName @left, FeatureList }
+@top FeatureModel { FeatureName FeatureList}
+
+FeatureList {
+    Feature3*
+}
+
+Feature {
+    !FeatureName "{" FeatureType "}"
+    (mandatory !FeatureList | optional !FeatureList | alternative !FeatureList | or !FeatureList)?
+}
+Feature2 {
+    !FeatureName "{" FeatureType "}"
+    ((Mandatory !FeatureList)? (Optional !FeatureList)?) | ((Alternative !FeatureList)? (Or !FeatureList)?)
+}
+Feature3 {
+    (FeatureName "{" FeatureType "}"
+    (Mandatory | Optional | Alternative | Or) !FeatureList) | String
+}
+
+FeatureName {
+    String
+}
+
+ItemList { list<String>?  }
+
+
+FeatureType {
+    "abstract"
+}
+
+Constraint {
+    ConstraintExpr*
+}
+
+ConstraintExpr {
+    FeatureName
+    ("|" | "=>" | "&")
+    FeatureName
+}
+
+@tokens {
+  Mandatory { "mandatory" }
+  Optional { "optional" }
+  Alternative { "alternative" }
+  Or { "or" }
+  String { @asciiLetter+ }
+  @precedence { Mandatory, Optional,Alternative, Or ,String }
+
+whitespace { $[ \n\r\t] }
+  //spaces after cleanup
+}
+@skip { whitespace }
+list<item> { item* }
+
+@external propSource jsonHighlighting from "./highlight"
+@detectDelim
