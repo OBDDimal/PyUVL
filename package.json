@@ -1,0 +1,29 @@
+{
+  "name": "pyuvl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OBDDimal/PyUVL"
+  },
+  "private": true,
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.18.0",
+    "@codemirror/highlight": "^0.19.8",
+    "@codemirror/lang-javascript": "^6.2.2",
+    "@codemirror/language": "^6.10.2",
+    "@lezer/highlight": "^1.2.1",
+    "@lezer/lr": "^1.4.2",
+    "codemirror": "^6.0.1",
+    "lezer": "^0.13.5",
+    "lit": "^3.2.0"
+  },
+  "devDependencies": {
+    "@lezer/generator": "^1.7.1"
+  }
+}

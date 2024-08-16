@@ -1,18 +1,12 @@
-import { myParser } from './parser';
+import { parser } from './parser.js';
 import { LRLanguage, LanguageSupport } from '@codemirror/language';
-import { HighlightStyle, tags } from '@codemirror/highlight';
+import { tags } from '@codemirror/highlight';
 import { styleTags } from '@lezer/highlight';
-
-const uvlHighlightStyle = HighlightStyle.define([
-    { tag: tags.keyword, color: '#007acc' },
-    { tag: tags.string, color: '#a31515' },
-    { tag: tags.variableName, color: '#267f99' },
-    { tag: tags.operator, color: '#d4d4d4' },
-    { tag: tags.brace, color: '#569cd6' }
-]);
+import { uvlHighlightStyle } from './highlight.js'
+import {completeFromList} from "@codemirror/autocomplete";
 
 const uvlLanguage = LRLanguage.define({
-    parser: myParser.configure({
+    parser: parser.configure({
         props: [
             styleTags({
                 Mandatory: tags.keyword,
@@ -34,4 +28,15 @@ const uvlLanguage = LRLanguage.define({
     }
 });
 
-export const uvlSupport = new LanguageSupport(uvlLanguage, [uvlHighlightStyle]);
+//autocomplete
+export const uvlCompletion = uvlLanguage.data.of({
+    autocomplete: completeFromList([
+        { label: "mandatory", type: "keyword" },
+        { label: "optional", type: "keyword" },
+        { label: "alternative", type: "keyword" },
+        { label: "or", type: "keyword" },
+        { label: "abstract", type: "keyword" }
+    ])
+})
+
+export const uvlSupport = new LanguageSupport(uvlLanguage, [uvlHighlightStyle, uvlCompletion]);

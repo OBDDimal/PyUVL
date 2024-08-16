@@ -2,18 +2,10 @@
 @top FeatureModel { FeatureName FeatureList}
 
 FeatureList {
-    Feature3*
+    Feature*
 }
 
 Feature {
-    !FeatureName "{" FeatureType "}"
-    (mandatory !FeatureList | optional !FeatureList | alternative !FeatureList | or !FeatureList)?
-}
-Feature2 {
-    !FeatureName "{" FeatureType "}"
-    ((Mandatory !FeatureList)? (Optional !FeatureList)?) | ((Alternative !FeatureList)? (Or !FeatureList)?)
-}
-Feature3 {
     (FeatureName "{" FeatureType "}"
     (Mandatory | Optional | Alternative | Or) !FeatureList) | String
 }

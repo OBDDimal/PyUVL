@@ -1,7 +1,9 @@
 import { HighlightStyle, tags } from "@codemirror/highlight";
 
-export const myHighlightStyle = HighlightStyle.define([
-    { tag: tags.keyword, color: "#d73a49" },
-    { tag: tags.variableName, color: "#0070f3" },
-    { tag: tags.number, color: "#6f42c1" },
+export const uvlHighlightStyle = HighlightStyle.define([
+    { tag: tags.keyword, color: '#007acc' },
+    { tag: tags.string, color: '#a31515' },
+    { tag: tags.variableName, color: '#267f99' },
+    { tag: tags.operator, color: '#d4d4d4' },
+    { tag: tags.brace, color: '#569cd6' }
 ]);
