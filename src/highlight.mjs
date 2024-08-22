@@ -1,3 +1,4 @@
+//this file is needed by the parser and gets integrated in language.mjs when the parser works
 import { HighlightStyle, tags as t } from "@codemirror/highlight";
 
 export const uvlHighlighting = HighlightStyle.define([
