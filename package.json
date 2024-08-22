@@ -1,32 +1,20 @@
 {
-  "devDependencies": {
-    "lite-server": "^2.6.1"
-  },
+  "name": "UVL editor",
+  "version": "0.0.1",
   "scripts": {
-    "start": "lite-server"
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.0",
-    "@codemirror/basic-setup": "^0.20.0",
     "@codemirror/highlight": "^0.19.8",
-    "@codemirror/lang-javascript": "^6.2.2",
+    "@codemirror/lang-markdown": "^6.2.5",
     "@codemirror/language": "^6.10.2",
     "@codemirror/state": "^6.4.1",
-    "@codemirror/view": "^6.32.0",
     "@lezer/highlight": "^1.2.1",
     "@lezer/lr": "^1.4.2",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "codemirror": "^6.0.1",
-    "lezer": "^0.13.5",
-    "lezer-generator": "^0.13.4",
-    "lit": "^3.2.0",
     "rollup": "^4.21.0"
-  },
-  "name": "editoruvl",
-  "version": "1.0.0",
-  "main": "index.js",
-  "keywords": [],
-  "author": "cv",
-  "license": "ISC",
-  "description": ""
+  }
 }

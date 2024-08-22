@@ -1,5 +1,5 @@
 import { LRParser } from "@lezer/lr"
-import { uvlHighlight } from "./highlight.js"
+import { uvlHighlight } from "./highlight.mjs"
 
 export const parser = LRParser.deserialize({
     version: 14,
