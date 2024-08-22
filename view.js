@@ -1,10 +1,16 @@
 import { LitElement, html, css } from 'lit';
-import {basicSetup, EditorView} from "@codemirror/basic-setup";
+import {EditorView} from "@codemirror/basic-setup";
 import {EditorState} from "@codemirror/state";
-import {LanguageSupport} from "@codemirror/language";
+import {javascript} from "@codemirror/lang-javascript"
+import {defaultHighlightStyle, LanguageSupport} from "@codemirror/language";
 import {autocompletion} from "@codemirror/autocomplete";
 import {uvlCompletion} from "./completions";
 import {minimalSetup} from "codemirror";
+import { completionUVL } from "./completions";
+import {lineNumbers} from "@codemirror/view";
+//import {example} from "./languageSupport";
+//import {example} from "./languageSupport";
+//import {example, exampleCompletion} from "./languageSupport";
 //import { LanguageSupport } from "@codemirror/language";
 //import {uvl} from "./language";
 //import {uvl} from "./highlighting";
@@ -15,14 +21,12 @@ class UVLEditor extends LitElement {
             display: block;
             height: 100%;
         }
-
         #editor-container {
             display: flex;
             flex-direction: column;
             height: 500px;
             border: 1px solid #ddd;
         }
-
         #controls {
             display: flex;
             justify-content: space-between;
@@ -30,13 +34,11 @@ class UVLEditor extends LitElement {
             background: #f5f5f5;
             border-bottom: 1px solid #ddd;
         }
-
         #editor {
             flex-grow: 1;
             height: 100%;
             overflow: hidden;
         }
-
         .cm-editor {
             height: 100%;
             width: 100%;
@@ -45,18 +47,15 @@ class UVLEditor extends LitElement {
 
     firstUpdated(_changedProperties) {
         this.renderRoot.querySelector("#file-input").value = "";
-        const state = EditorState.create({
+
+        this.state = EditorState.create({
             doc: "// Write your UVL structure",
-            // Uncomment and configure the extensions as needed
-            // extensions: [
-            //     minimalSetup,
-            //     new LanguageSupport(uvl),
-            //     // autocompletion({ override: [uvlCompletion] })
-            // ],
+            //TODO: Editor doesnt load when extensions are selected
+            //extensions: [minimalSetup, example()]
         });
 
         this.myView = new EditorView({
-            state: state,
+            state: this.state,
             parent: this.renderRoot.querySelector("#editor"),
         });
 

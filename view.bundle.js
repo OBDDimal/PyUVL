@@ -14890,7 +14890,7 @@
    The default maximum length of a `TreeBuffer` node.
    */
    const DefaultBufferLength = 1024;
-   let nextPropID$1 = 0;
+   let nextPropID = 0;
    class Range {
        constructor(from, to) {
            this.from = from;
@@ -14902,12 +14902,12 @@
    can have metadata associated with it in props. Instances of this
    class represent prop names.
    */
-   let NodeProp$1 = class NodeProp {
+   class NodeProp {
        /**
        Create a new node prop type.
        */
        constructor(config = {}) {
-           this.id = nextPropID$1++;
+           this.id = nextPropID++;
            this.perNode = !!config.perNode;
            this.deserialize = config.deserialize || (() => {
                throw new Error("This node type doesn't define a deserialize function");
@@ -14926,32 +14926,32 @@
            if (this.perNode)
                throw new RangeError("Can't add per-node props to node types");
            if (typeof match != "function")
-               match = NodeType$1.match(match);
+               match = NodeType.match(match);
            return (type) => {
                let result = match(type);
                return result === undefined ? null : [this, result];
            };
        }
-   };
+   }
    /**
    Prop that is used to describe matching delimiters. For opening
    delimiters, this holds an array of node names (written as a
    space-separated string when declaring this prop in a grammar)
    for the node types of closing delimiters that match it.
    */
-   NodeProp$1.closedBy = new NodeProp$1({ deserialize: str => str.split(" ") });
+   NodeProp.closedBy = new NodeProp({ deserialize: str => str.split(" ") });
    /**
    The inverse of [`closedBy`](#common.NodeProp^closedBy). This is
    attached to closing delimiters, holding an array of node names
    of types of matching opening delimiters.
    */
-   NodeProp$1.openedBy = new NodeProp$1({ deserialize: str => str.split(" ") });
+   NodeProp.openedBy = new NodeProp({ deserialize: str => str.split(" ") });
    /**
    Used to assign node types to groups (for example, all node
    types that represent an expression could be tagged with an
    `"Expression"` group).
    */
-   NodeProp$1.group = new NodeProp$1({ deserialize: str => str.split(" ") });
+   NodeProp.group = new NodeProp({ deserialize: str => str.split(" ") });
    /**
    Attached to nodes to indicate these should be
    [displayed](https://codemirror.net/docs/ref/#language.syntaxTree)
@@ -14963,7 +14963,7 @@
    not given a value, in a grammar declaration, defaults to
    `"auto"`.
    */
-   NodeProp$1.isolate = new NodeProp$1({ deserialize: value => {
+   NodeProp.isolate = new NodeProp({ deserialize: value => {
            if (value && value != "rtl" && value != "ltr" && value != "auto")
                throw new RangeError("Invalid value for isolate: " + value);
            return value || "auto";
@@ -14973,20 +14973,20 @@
    that the node was parsed in, if any. Used to limit reuse of
    contextual nodes.
    */
-   NodeProp$1.contextHash = new NodeProp$1({ perNode: true });
+   NodeProp.contextHash = new NodeProp({ perNode: true });
    /**
    The distance beyond the end of the node that the tokenizer
    looked ahead for any of the tokens inside the node. (The LR
    parser only stores this when it is larger than 25, for
    efficiency reasons.)
    */
-   NodeProp$1.lookAhead = new NodeProp$1({ perNode: true });
+   NodeProp.lookAhead = new NodeProp({ perNode: true });
    /**
    This per-node prop is used to replace a given node, or part of a
    node, with another tree. This is useful to include trees from
    different languages in mixed-language parsers.
    */
-   NodeProp$1.mounted = new NodeProp$1({ perNode: true });
+   NodeProp.mounted = new NodeProp({ perNode: true });
    /**
    A mounted tree, which can be [stored](#common.NodeProp^mounted) on
    a tree node to indicate that parts of its content are
@@ -15020,14 +15020,14 @@
        @internal
        */
        static get(tree) {
-           return tree && tree.props && tree.props[NodeProp$1.mounted.id];
+           return tree && tree.props && tree.props[NodeProp.mounted.id];
        }
    }
-   const noProps$1 = Object.create(null);
+   const noProps = Object.create(null);
    /**
    Each node in a syntax tree has a node type associated with it.
    */
-   let NodeType$1 = class NodeType {
+   class NodeType {
        /**
        @internal
        */
@@ -15061,7 +15061,7 @@
        Define a node type.
        */
        static define(spec) {
-           let props = spec.props && spec.props.length ? Object.create(null) : noProps$1;
+           let props = spec.props && spec.props.length ? Object.create(null) : noProps;
            let flags = (spec.top ? 1 /* NodeFlag.Top */ : 0) | (spec.skipped ? 2 /* NodeFlag.Skipped */ : 0) |
                (spec.error ? 4 /* NodeFlag.Error */ : 0) | (spec.name == null ? 8 /* NodeFlag.Anonymous */ : 0);
            let type = new NodeType(spec.name || "", props, spec.id, flags);
@@ -15107,7 +15107,7 @@
            if (typeof name == 'string') {
                if (this.name == name)
                    return true;
-               let group = this.prop(NodeProp$1.group);
+               let group = this.prop(NodeProp.group);
                return group ? group.indexOf(name) > -1 : false;
            }
            return this.id == name;
@@ -15126,24 +15126,24 @@
                for (let name of prop.split(" "))
                    direct[name] = map[prop];
            return (node) => {
-               for (let groups = node.prop(NodeProp$1.group), i = -1; i < (groups ? groups.length : 0); i++) {
+               for (let groups = node.prop(NodeProp.group), i = -1; i < (groups ? groups.length : 0); i++) {
                    let found = direct[i < 0 ? node.name : groups[i]];
                    if (found)
                        return found;
                }
            };
        }
-   };
+   }
    /**
    An empty dummy node type to use when no actual type is available.
    */
-   NodeType$1.none = new NodeType$1("", Object.create(null), 0, 8 /* NodeFlag.Anonymous */);
+   NodeType.none = new NodeType("", Object.create(null), 0, 8 /* NodeFlag.Anonymous */);
    const CachedNode = new WeakMap(), CachedInnerNode = new WeakMap();
    /**
    Options that control iteration. Can be combined with the `|`
    operator to enable multiple ones.
    */
-   var IterMode$1;
+   var IterMode;
    (function (IterMode) {
        /**
        When enabled, iteration will only visit [`Tree`](#common.Tree)
@@ -15170,7 +15170,7 @@
        position.
        */
        IterMode[IterMode["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-   })(IterMode$1 || (IterMode$1 = {}));
+   })(IterMode || (IterMode = {}));
    /**
    A piece of syntax tree. There are two ways to approach these
    trees: the way they are actually stored in memory, and the
@@ -15321,8 +15321,8 @@
        */
        iterate(spec) {
            let { enter, leave, from = 0, to = this.length } = spec;
-           let mode = spec.mode || 0, anon = (mode & IterMode$1.IncludeAnonymous) > 0;
-           for (let c = this.cursor(mode | IterMode$1.IncludeAnonymous);;) {
+           let mode = spec.mode || 0, anon = (mode & IterMode.IncludeAnonymous) > 0;
+           for (let c = this.cursor(mode | IterMode.IncludeAnonymous);;) {
                let entered = false;
                if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
                    if (c.firstChild())
@@ -15366,7 +15366,7 @@
        */
        balance(config = {}) {
            return this.children.length <= 8 /* Balance.BranchFactor */ ? this :
-               balanceRange(NodeType$1.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new Tree(this.type, children, positions, length, this.propValues), config.makeTree || ((children, positions, length) => new Tree(NodeType$1.none, children, positions, length)));
+               balanceRange(NodeType.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new Tree(this.type, children, positions, length, this.propValues), config.makeTree || ((children, positions, length) => new Tree(NodeType.none, children, positions, length)));
        }
        /**
        Build a tree from a postfix-ordered buffer of node information,
@@ -15377,7 +15377,7 @@
    /**
    The empty tree
    */
-   Tree.empty = new Tree(NodeType$1.none, [], [], 0);
+   Tree.empty = new Tree(NodeType.none, [], [], 0);
    class FlatBufferCursor {
        constructor(buffer, index) {
            this.buffer = buffer;
@@ -15421,7 +15421,7 @@
        /**
        @internal
        */
-       get type() { return NodeType$1.none; }
+       get type() { return NodeType.none; }
        /**
        @internal
        */
@@ -15502,7 +15502,7 @@
                return node;
            node = parent;
        }
-       let mode = overlays ? 0 : IterMode$1.IgnoreOverlays;
+       let mode = overlays ? 0 : IterMode.IgnoreOverlays;
        // Must go up out of overlays when those do not overlap with pos
        if (overlays)
            for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
@@ -15573,22 +15573,22 @@
                    if (!checkSide(side, pos, start, start + next.length))
                        continue;
                    if (next instanceof TreeBuffer) {
-                       if (mode & IterMode$1.ExcludeBuffers)
+                       if (mode & IterMode.ExcludeBuffers)
                            continue;
                        let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
                        if (index > -1)
                            return new BufferNode(new BufferContext(parent, next, i, start), null, index);
                    }
-                   else if ((mode & IterMode$1.IncludeAnonymous) || (!next.type.isAnonymous || hasChild(next))) {
+                   else if ((mode & IterMode.IncludeAnonymous) || (!next.type.isAnonymous || hasChild(next))) {
                        let mounted;
-                       if (!(mode & IterMode$1.IgnoreMounts) && (mounted = MountedTree.get(next)) && !mounted.overlay)
+                       if (!(mode & IterMode.IgnoreMounts) && (mounted = MountedTree.get(next)) && !mounted.overlay)
                            return new TreeNode(mounted.tree, start, i, parent);
                        let inner = new TreeNode(next, start, i, parent);
-                       return (mode & IterMode$1.IncludeAnonymous) || !inner.type.isAnonymous ? inner
+                       return (mode & IterMode.IncludeAnonymous) || !inner.type.isAnonymous ? inner
                            : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side);
                    }
                }
-               if ((mode & IterMode$1.IncludeAnonymous) || !parent.type.isAnonymous)
+               if ((mode & IterMode.IncludeAnonymous) || !parent.type.isAnonymous)
                    return null;
                if (parent.index >= 0)
                    i = parent.index + dir;
@@ -15605,7 +15605,7 @@
        childBefore(pos) { return this.nextChild(this._tree.children.length - 1, -1, pos, -2 /* Side.Before */); }
        enter(pos, side, mode = 0) {
            let mounted;
-           if (!(mode & IterMode$1.IgnoreOverlays) && (mounted = MountedTree.get(this._tree)) && mounted.overlay) {
+           if (!(mode & IterMode.IgnoreOverlays) && (mounted = MountedTree.get(this._tree)) && mounted.overlay) {
                let rPos = pos - this.from;
                for (let { from, to } of mounted.overlay) {
                    if ((side > 0 ? from <= rPos : from < rPos) &&
@@ -15697,7 +15697,7 @@
        childAfter(pos) { return this.child(1, pos, 2 /* Side.After */); }
        childBefore(pos) { return this.child(-1, pos, -2 /* Side.Before */); }
        enter(pos, side, mode = 0) {
-           if (mode & IterMode$1.ExcludeBuffers)
+           if (mode & IterMode.ExcludeBuffers)
                return null;
            let { buffer } = this.context;
            let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
@@ -15901,17 +15901,17 @@
        enter(pos, side, mode = this.mode) {
            if (!this.buffer)
                return this.yield(this._tree.enter(pos, side, mode));
-           return mode & IterMode$1.ExcludeBuffers ? false : this.enterChild(1, pos, side);
+           return mode & IterMode.ExcludeBuffers ? false : this.enterChild(1, pos, side);
        }
        /**
        Move to the node's parent node, if this isn't the top node.
        */
        parent() {
            if (!this.buffer)
-               return this.yieldNode((this.mode & IterMode$1.IncludeAnonymous) ? this._tree._parent : this._tree.parent);
+               return this.yieldNode((this.mode & IterMode.IncludeAnonymous) ? this._tree._parent : this._tree.parent);
            if (this.stack.length)
                return this.yieldBuf(this.stack.pop());
-           let parent = (this.mode & IterMode$1.IncludeAnonymous) ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
+           let parent = (this.mode & IterMode.IncludeAnonymous) ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
            this.buffer = null;
            return this.yieldNode(parent);
        }
@@ -15965,7 +15965,7 @@
                if (index > -1)
                    for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
                        let child = parent._tree.children[i];
-                       if ((this.mode & IterMode$1.IncludeAnonymous) ||
+                       if ((this.mode & IterMode.IncludeAnonymous) ||
                            child instanceof TreeBuffer ||
                            !child.type.isAnonymous ||
                            hasChild(child))
@@ -16219,7 +16219,7 @@
                if (lastI >= 0 && (last = children[lastI]) instanceof Tree) {
                    if (!lastI && last.type == type && last.length == length)
                        return last;
-                   if (lookAheadProp = last.prop(NodeProp$1.lookAhead))
+                   if (lookAheadProp = last.prop(NodeProp.lookAhead))
                        lookAhead = positions[lastI] + last.length + lookAheadProp;
                }
                return makeTree(type, children, positions, length, lookAhead);
@@ -16236,11 +16236,11 @@
        }
        function makeTree(type, children, positions, length, lookAhead = 0, props) {
            if (contextHash) {
-               let pair = [NodeProp$1.contextHash, contextHash];
+               let pair = [NodeProp.contextHash, contextHash];
                props = props ? [pair].concat(props) : [pair];
            }
            if (lookAhead > 25) {
-               let pair = [NodeProp$1.lookAhead, lookAhead];
+               let pair = [NodeProp.lookAhead, lookAhead];
                props = props ? [pair].concat(props) : [pair];
            }
            return new Tree(type, children, positions, length, props);
@@ -16540,7 +16540,753 @@
        get lineChunks() { return false; }
        read(from, to) { return this.string.slice(from, to); }
    }
-   new NodeProp$1({ perNode: true });
+   new NodeProp({ perNode: true });
+
+   let nextTagID = 0;
+   /**
+   Highlighting tags are markers that denote a highlighting category.
+   They are [associated](#highlight.styleTags) with parts of a syntax
+   tree by a language mode, and then mapped to an actual CSS style by
+   a [highlighter](#highlight.Highlighter).
+
+   Because syntax tree node types and highlight styles have to be
+   able to talk the same language, CodeMirror uses a mostly _closed_
+   [vocabulary](#highlight.tags) of syntax tags (as opposed to
+   traditional open string-based systems, which make it hard for
+   highlighting themes to cover all the tokens produced by the
+   various languages).
+
+   It _is_ possible to [define](#highlight.Tag^define) your own
+   highlighting tags for system-internal use (where you control both
+   the language package and the highlighter), but such tags will not
+   be picked up by regular highlighters (though you can derive them
+   from standard tags to allow highlighters to fall back to those).
+   */
+   class Tag {
+       /**
+       @internal
+       */
+       constructor(
+       /**
+       The optional name of the base tag @internal
+       */
+       name, 
+       /**
+       The set of this tag and all its parent tags, starting with
+       this one itself and sorted in order of decreasing specificity.
+       */
+       set, 
+       /**
+       The base unmodified tag that this one is based on, if it's
+       modified @internal
+       */
+       base, 
+       /**
+       The modifiers applied to this.base @internal
+       */
+       modified) {
+           this.name = name;
+           this.set = set;
+           this.base = base;
+           this.modified = modified;
+           /**
+           @internal
+           */
+           this.id = nextTagID++;
+       }
+       toString() {
+           let { name } = this;
+           for (let mod of this.modified)
+               if (mod.name)
+                   name = `${mod.name}(${name})`;
+           return name;
+       }
+       static define(nameOrParent, parent) {
+           let name = typeof nameOrParent == "string" ? nameOrParent : "?";
+           if (nameOrParent instanceof Tag)
+               parent = nameOrParent;
+           if (parent === null || parent === void 0 ? void 0 : parent.base)
+               throw new Error("Can not derive from a modified tag");
+           let tag = new Tag(name, [], null, []);
+           tag.set.push(tag);
+           if (parent)
+               for (let t of parent.set)
+                   tag.set.push(t);
+           return tag;
+       }
+       /**
+       Define a tag _modifier_, which is a function that, given a tag,
+       will return a tag that is a subtag of the original. Applying the
+       same modifier to a twice tag will return the same value (`m1(t1)
+       == m1(t1)`) and applying multiple modifiers will, regardless or
+       order, produce the same tag (`m1(m2(t1)) == m2(m1(t1))`).
+       
+       When multiple modifiers are applied to a given base tag, each
+       smaller set of modifiers is registered as a parent, so that for
+       example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
+       `m1(m3(t1)`, and so on.
+       */
+       static defineModifier(name) {
+           let mod = new Modifier(name);
+           return (tag) => {
+               if (tag.modified.indexOf(mod) > -1)
+                   return tag;
+               return Modifier.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
+           };
+       }
+   }
+   let nextModifierID = 0;
+   class Modifier {
+       constructor(name) {
+           this.name = name;
+           this.instances = [];
+           this.id = nextModifierID++;
+       }
+       static get(base, mods) {
+           if (!mods.length)
+               return base;
+           let exists = mods[0].instances.find(t => t.base == base && sameArray(mods, t.modified));
+           if (exists)
+               return exists;
+           let set = [], tag = new Tag(base.name, set, base, mods);
+           for (let m of mods)
+               m.instances.push(tag);
+           let configs = powerSet(mods);
+           for (let parent of base.set)
+               if (!parent.modified.length)
+                   for (let config of configs)
+                       set.push(Modifier.get(parent, config));
+           return tag;
+       }
+   }
+   function sameArray(a, b) {
+       return a.length == b.length && a.every((x, i) => x == b[i]);
+   }
+   function powerSet(array) {
+       let sets = [[]];
+       for (let i = 0; i < array.length; i++) {
+           for (let j = 0, e = sets.length; j < e; j++) {
+               sets.push(sets[j].concat(array[i]));
+           }
+       }
+       return sets.sort((a, b) => b.length - a.length);
+   }
+   /**
+   This function is used to add a set of tags to a language syntax
+   via [`NodeSet.extend`](#common.NodeSet.extend) or
+   [`LRParser.configure`](#lr.LRParser.configure).
+
+   The argument object maps node selectors to [highlighting
+   tags](#highlight.Tag) or arrays of tags.
+
+   Node selectors may hold one or more (space-separated) node paths.
+   Such a path can be a [node name](#common.NodeType.name), or
+   multiple node names (or `*` wildcards) separated by slash
+   characters, as in `"Block/Declaration/VariableName"`. Such a path
+   matches the final node but only if its direct parent nodes are the
+   other nodes mentioned. A `*` in such a path matches any parent,
+   but only a single level—wildcards that match multiple parents
+   aren't supported, both for efficiency reasons and because Lezer
+   trees make it rather hard to reason about what they would match.)
+
+   A path can be ended with `/...` to indicate that the tag assigned
+   to the node should also apply to all child nodes, even if they
+   match their own style (by default, only the innermost style is
+   used).
+
+   When a path ends in `!`, as in `Attribute!`, no further matching
+   happens for the node's child nodes, and the entire node gets the
+   given style.
+
+   In this notation, node names that contain `/`, `!`, `*`, or `...`
+   must be quoted as JSON strings.
+
+   For example:
+
+   ```javascript
+   parser.withProps(
+     styleTags({
+       // Style Number and BigNumber nodes
+       "Number BigNumber": tags.number,
+       // Style Escape nodes whose parent is String
+       "String/Escape": tags.escape,
+       // Style anything inside Attributes nodes
+       "Attributes!": tags.meta,
+       // Add a style to all content inside Italic nodes
+       "Italic/...": tags.emphasis,
+       // Style InvalidString nodes as both `string` and `invalid`
+       "InvalidString": [tags.string, tags.invalid],
+       // Style the node named "/" as punctuation
+       '"/"': tags.punctuation
+     })
+   )
+   ```
+   */
+   function styleTags(spec) {
+       let byName = Object.create(null);
+       for (let prop in spec) {
+           let tags = spec[prop];
+           if (!Array.isArray(tags))
+               tags = [tags];
+           for (let part of prop.split(" "))
+               if (part) {
+                   let pieces = [], mode = 2 /* Mode.Normal */, rest = part;
+                   for (let pos = 0;;) {
+                       if (rest == "..." && pos > 0 && pos + 3 == part.length) {
+                           mode = 1 /* Mode.Inherit */;
+                           break;
+                       }
+                       let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
+                       if (!m)
+                           throw new RangeError("Invalid path: " + part);
+                       pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
+                       pos += m[0].length;
+                       if (pos == part.length)
+                           break;
+                       let next = part[pos++];
+                       if (pos == part.length && next == "!") {
+                           mode = 0 /* Mode.Opaque */;
+                           break;
+                       }
+                       if (next != "/")
+                           throw new RangeError("Invalid path: " + part);
+                       rest = part.slice(pos);
+                   }
+                   let last = pieces.length - 1, inner = pieces[last];
+                   if (!inner)
+                       throw new RangeError("Invalid path: " + part);
+                   let rule = new Rule(tags, mode, last > 0 ? pieces.slice(0, last) : null);
+                   byName[inner] = rule.sort(byName[inner]);
+               }
+       }
+       return ruleNodeProp.add(byName);
+   }
+   const ruleNodeProp = new NodeProp();
+   class Rule {
+       constructor(tags, mode, context, next) {
+           this.tags = tags;
+           this.mode = mode;
+           this.context = context;
+           this.next = next;
+       }
+       get opaque() { return this.mode == 0 /* Mode.Opaque */; }
+       get inherit() { return this.mode == 1 /* Mode.Inherit */; }
+       sort(other) {
+           if (!other || other.depth < this.depth) {
+               this.next = other;
+               return this;
+           }
+           other.next = this.sort(other.next);
+           return other;
+       }
+       get depth() { return this.context ? this.context.length : 0; }
+   }
+   Rule.empty = new Rule([], 2 /* Mode.Normal */, null);
+   /**
+   Define a [highlighter](#highlight.Highlighter) from an array of
+   tag/class pairs. Classes associated with more specific tags will
+   take precedence.
+   */
+   function tagHighlighter(tags, options) {
+       let map = Object.create(null);
+       for (let style of tags) {
+           if (!Array.isArray(style.tag))
+               map[style.tag.id] = style.class;
+           else
+               for (let tag of style.tag)
+                   map[tag.id] = style.class;
+       }
+       let { scope, all = null } = options || {};
+       return {
+           style: (tags) => {
+               let cls = all;
+               for (let tag of tags) {
+                   for (let sub of tag.set) {
+                       let tagClass = map[sub.id];
+                       if (tagClass) {
+                           cls = cls ? cls + " " + tagClass : tagClass;
+                           break;
+                       }
+                   }
+               }
+               return cls;
+           },
+           scope
+       };
+   }
+   const t = Tag.define;
+   const comment = t(), name = t(), typeName = t(name), propertyName = t(name), literal = t(), string = t(literal), number = t(literal), content = t(), heading = t(content), keyword = t(), operator = t(), punctuation = t(), bracket = t(punctuation), meta = t();
+   /**
+   The default set of highlighting [tags](#highlight.Tag).
+
+   This collection is heavily biased towards programming languages,
+   and necessarily incomplete. A full ontology of syntactic
+   constructs would fill a stack of books, and be impractical to
+   write themes for. So try to make do with this set. If all else
+   fails, [open an
+   issue](https://github.com/codemirror/codemirror.next) to propose a
+   new tag, or [define](#highlight.Tag^define) a local custom tag for
+   your use case.
+
+   Note that it is not obligatory to always attach the most specific
+   tag possible to an element—if your grammar can't easily
+   distinguish a certain type of element (such as a local variable),
+   it is okay to style it as its more general variant (a variable).
+
+   For tags that extend some parent tag, the documentation links to
+   the parent.
+   */
+   const tags = {
+       /**
+       A comment.
+       */
+       comment,
+       /**
+       A line [comment](#highlight.tags.comment).
+       */
+       lineComment: t(comment),
+       /**
+       A block [comment](#highlight.tags.comment).
+       */
+       blockComment: t(comment),
+       /**
+       A documentation [comment](#highlight.tags.comment).
+       */
+       docComment: t(comment),
+       /**
+       Any kind of identifier.
+       */
+       name,
+       /**
+       The [name](#highlight.tags.name) of a variable.
+       */
+       variableName: t(name),
+       /**
+       A type [name](#highlight.tags.name).
+       */
+       typeName: typeName,
+       /**
+       A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
+       */
+       tagName: t(typeName),
+       /**
+       A property or field [name](#highlight.tags.name).
+       */
+       propertyName: propertyName,
+       /**
+       An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
+       */
+       attributeName: t(propertyName),
+       /**
+       The [name](#highlight.tags.name) of a class.
+       */
+       className: t(name),
+       /**
+       A label [name](#highlight.tags.name).
+       */
+       labelName: t(name),
+       /**
+       A namespace [name](#highlight.tags.name).
+       */
+       namespace: t(name),
+       /**
+       The [name](#highlight.tags.name) of a macro.
+       */
+       macroName: t(name),
+       /**
+       A literal value.
+       */
+       literal,
+       /**
+       A string [literal](#highlight.tags.literal).
+       */
+       string,
+       /**
+       A documentation [string](#highlight.tags.string).
+       */
+       docString: t(string),
+       /**
+       A character literal (subtag of [string](#highlight.tags.string)).
+       */
+       character: t(string),
+       /**
+       An attribute value (subtag of [string](#highlight.tags.string)).
+       */
+       attributeValue: t(string),
+       /**
+       A number [literal](#highlight.tags.literal).
+       */
+       number,
+       /**
+       An integer [number](#highlight.tags.number) literal.
+       */
+       integer: t(number),
+       /**
+       A floating-point [number](#highlight.tags.number) literal.
+       */
+       float: t(number),
+       /**
+       A boolean [literal](#highlight.tags.literal).
+       */
+       bool: t(literal),
+       /**
+       Regular expression [literal](#highlight.tags.literal).
+       */
+       regexp: t(literal),
+       /**
+       An escape [literal](#highlight.tags.literal), for example a
+       backslash escape in a string.
+       */
+       escape: t(literal),
+       /**
+       A color [literal](#highlight.tags.literal).
+       */
+       color: t(literal),
+       /**
+       A URL [literal](#highlight.tags.literal).
+       */
+       url: t(literal),
+       /**
+       A language keyword.
+       */
+       keyword,
+       /**
+       The [keyword](#highlight.tags.keyword) for the self or this
+       object.
+       */
+       self: t(keyword),
+       /**
+       The [keyword](#highlight.tags.keyword) for null.
+       */
+       null: t(keyword),
+       /**
+       A [keyword](#highlight.tags.keyword) denoting some atomic value.
+       */
+       atom: t(keyword),
+       /**
+       A [keyword](#highlight.tags.keyword) that represents a unit.
+       */
+       unit: t(keyword),
+       /**
+       A modifier [keyword](#highlight.tags.keyword).
+       */
+       modifier: t(keyword),
+       /**
+       A [keyword](#highlight.tags.keyword) that acts as an operator.
+       */
+       operatorKeyword: t(keyword),
+       /**
+       A control-flow related [keyword](#highlight.tags.keyword).
+       */
+       controlKeyword: t(keyword),
+       /**
+       A [keyword](#highlight.tags.keyword) that defines something.
+       */
+       definitionKeyword: t(keyword),
+       /**
+       A [keyword](#highlight.tags.keyword) related to defining or
+       interfacing with modules.
+       */
+       moduleKeyword: t(keyword),
+       /**
+       An operator.
+       */
+       operator,
+       /**
+       An [operator](#highlight.tags.operator) that dereferences something.
+       */
+       derefOperator: t(operator),
+       /**
+       Arithmetic-related [operator](#highlight.tags.operator).
+       */
+       arithmeticOperator: t(operator),
+       /**
+       Logical [operator](#highlight.tags.operator).
+       */
+       logicOperator: t(operator),
+       /**
+       Bit [operator](#highlight.tags.operator).
+       */
+       bitwiseOperator: t(operator),
+       /**
+       Comparison [operator](#highlight.tags.operator).
+       */
+       compareOperator: t(operator),
+       /**
+       [Operator](#highlight.tags.operator) that updates its operand.
+       */
+       updateOperator: t(operator),
+       /**
+       [Operator](#highlight.tags.operator) that defines something.
+       */
+       definitionOperator: t(operator),
+       /**
+       Type-related [operator](#highlight.tags.operator).
+       */
+       typeOperator: t(operator),
+       /**
+       Control-flow [operator](#highlight.tags.operator).
+       */
+       controlOperator: t(operator),
+       /**
+       Program or markup punctuation.
+       */
+       punctuation,
+       /**
+       [Punctuation](#highlight.tags.punctuation) that separates
+       things.
+       */
+       separator: t(punctuation),
+       /**
+       Bracket-style [punctuation](#highlight.tags.punctuation).
+       */
+       bracket,
+       /**
+       Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
+       tokens).
+       */
+       angleBracket: t(bracket),
+       /**
+       Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
+       tokens).
+       */
+       squareBracket: t(bracket),
+       /**
+       Parentheses (usually `(` and `)` tokens). Subtag of
+       [bracket](#highlight.tags.bracket).
+       */
+       paren: t(bracket),
+       /**
+       Braces (usually `{` and `}` tokens). Subtag of
+       [bracket](#highlight.tags.bracket).
+       */
+       brace: t(bracket),
+       /**
+       Content, for example plain text in XML or markup documents.
+       */
+       content,
+       /**
+       [Content](#highlight.tags.content) that represents a heading.
+       */
+       heading,
+       /**
+       A level 1 [heading](#highlight.tags.heading).
+       */
+       heading1: t(heading),
+       /**
+       A level 2 [heading](#highlight.tags.heading).
+       */
+       heading2: t(heading),
+       /**
+       A level 3 [heading](#highlight.tags.heading).
+       */
+       heading3: t(heading),
+       /**
+       A level 4 [heading](#highlight.tags.heading).
+       */
+       heading4: t(heading),
+       /**
+       A level 5 [heading](#highlight.tags.heading).
+       */
+       heading5: t(heading),
+       /**
+       A level 6 [heading](#highlight.tags.heading).
+       */
+       heading6: t(heading),
+       /**
+       A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
+       */
+       contentSeparator: t(content),
+       /**
+       [Content](#highlight.tags.content) that represents a list.
+       */
+       list: t(content),
+       /**
+       [Content](#highlight.tags.content) that represents a quote.
+       */
+       quote: t(content),
+       /**
+       [Content](#highlight.tags.content) that is emphasized.
+       */
+       emphasis: t(content),
+       /**
+       [Content](#highlight.tags.content) that is styled strong.
+       */
+       strong: t(content),
+       /**
+       [Content](#highlight.tags.content) that is part of a link.
+       */
+       link: t(content),
+       /**
+       [Content](#highlight.tags.content) that is styled as code or
+       monospace.
+       */
+       monospace: t(content),
+       /**
+       [Content](#highlight.tags.content) that has a strike-through
+       style.
+       */
+       strikethrough: t(content),
+       /**
+       Inserted text in a change-tracking format.
+       */
+       inserted: t(),
+       /**
+       Deleted text.
+       */
+       deleted: t(),
+       /**
+       Changed text.
+       */
+       changed: t(),
+       /**
+       An invalid or unsyntactic element.
+       */
+       invalid: t(),
+       /**
+       Metadata or meta-instruction.
+       */
+       meta,
+       /**
+       [Metadata](#highlight.tags.meta) that applies to the entire
+       document.
+       */
+       documentMeta: t(meta),
+       /**
+       [Metadata](#highlight.tags.meta) that annotates or adds
+       attributes to a given syntactic element.
+       */
+       annotation: t(meta),
+       /**
+       Processing instruction or preprocessor directive. Subtag of
+       [meta](#highlight.tags.meta).
+       */
+       processingInstruction: t(meta),
+       /**
+       [Modifier](#highlight.Tag^defineModifier) that indicates that a
+       given element is being defined. Expected to be used with the
+       various [name](#highlight.tags.name) tags.
+       */
+       definition: Tag.defineModifier("definition"),
+       /**
+       [Modifier](#highlight.Tag^defineModifier) that indicates that
+       something is constant. Mostly expected to be used with
+       [variable names](#highlight.tags.variableName).
+       */
+       constant: Tag.defineModifier("constant"),
+       /**
+       [Modifier](#highlight.Tag^defineModifier) used to indicate that
+       a [variable](#highlight.tags.variableName) or [property
+       name](#highlight.tags.propertyName) is being called or defined
+       as a function.
+       */
+       function: Tag.defineModifier("function"),
+       /**
+       [Modifier](#highlight.Tag^defineModifier) that can be applied to
+       [names](#highlight.tags.name) to indicate that they belong to
+       the language's standard environment.
+       */
+       standard: Tag.defineModifier("standard"),
+       /**
+       [Modifier](#highlight.Tag^defineModifier) that indicates a given
+       [names](#highlight.tags.name) is local to some scope.
+       */
+       local: Tag.defineModifier("local"),
+       /**
+       A generic variant [modifier](#highlight.Tag^defineModifier) that
+       can be used to tag language-specific alternative variants of
+       some common tag. It is recommended for themes to define special
+       forms of at least the [string](#highlight.tags.string) and
+       [variable name](#highlight.tags.variableName) tags, since those
+       come up a lot.
+       */
+       special: Tag.defineModifier("special")
+   };
+   for (let name in tags) {
+       let val = tags[name];
+       if (val instanceof Tag)
+           val.name = name;
+   }
+   /**
+   This is a highlighter that adds stable, predictable classes to
+   tokens, for styling with external CSS.
+
+   The following tags are mapped to their name prefixed with `"tok-"`
+   (for example `"tok-comment"`):
+
+   * [`link`](#highlight.tags.link)
+   * [`heading`](#highlight.tags.heading)
+   * [`emphasis`](#highlight.tags.emphasis)
+   * [`strong`](#highlight.tags.strong)
+   * [`keyword`](#highlight.tags.keyword)
+   * [`atom`](#highlight.tags.atom)
+   * [`bool`](#highlight.tags.bool)
+   * [`url`](#highlight.tags.url)
+   * [`labelName`](#highlight.tags.labelName)
+   * [`inserted`](#highlight.tags.inserted)
+   * [`deleted`](#highlight.tags.deleted)
+   * [`literal`](#highlight.tags.literal)
+   * [`string`](#highlight.tags.string)
+   * [`number`](#highlight.tags.number)
+   * [`variableName`](#highlight.tags.variableName)
+   * [`typeName`](#highlight.tags.typeName)
+   * [`namespace`](#highlight.tags.namespace)
+   * [`className`](#highlight.tags.className)
+   * [`macroName`](#highlight.tags.macroName)
+   * [`propertyName`](#highlight.tags.propertyName)
+   * [`operator`](#highlight.tags.operator)
+   * [`comment`](#highlight.tags.comment)
+   * [`meta`](#highlight.tags.meta)
+   * [`punctuation`](#highlight.tags.punctuation)
+   * [`invalid`](#highlight.tags.invalid)
+
+   In addition, these mappings are provided:
+
+   * [`regexp`](#highlight.tags.regexp),
+     [`escape`](#highlight.tags.escape), and
+     [`special`](#highlight.tags.special)[`(string)`](#highlight.tags.string)
+     are mapped to `"tok-string2"`
+   * [`special`](#highlight.tags.special)[`(variableName)`](#highlight.tags.variableName)
+     to `"tok-variableName2"`
+   * [`local`](#highlight.tags.local)[`(variableName)`](#highlight.tags.variableName)
+     to `"tok-variableName tok-local"`
+   * [`definition`](#highlight.tags.definition)[`(variableName)`](#highlight.tags.variableName)
+     to `"tok-variableName tok-definition"`
+   * [`definition`](#highlight.tags.definition)[`(propertyName)`](#highlight.tags.propertyName)
+     to `"tok-propertyName tok-definition"`
+   */
+   tagHighlighter([
+       { tag: tags.link, class: "tok-link" },
+       { tag: tags.heading, class: "tok-heading" },
+       { tag: tags.emphasis, class: "tok-emphasis" },
+       { tag: tags.strong, class: "tok-strong" },
+       { tag: tags.keyword, class: "tok-keyword" },
+       { tag: tags.atom, class: "tok-atom" },
+       { tag: tags.bool, class: "tok-bool" },
+       { tag: tags.url, class: "tok-url" },
+       { tag: tags.labelName, class: "tok-labelName" },
+       { tag: tags.inserted, class: "tok-inserted" },
+       { tag: tags.deleted, class: "tok-deleted" },
+       { tag: tags.literal, class: "tok-literal" },
+       { tag: tags.string, class: "tok-string" },
+       { tag: tags.number, class: "tok-number" },
+       { tag: [tags.regexp, tags.escape, tags.special(tags.string)], class: "tok-string2" },
+       { tag: tags.variableName, class: "tok-variableName" },
+       { tag: tags.local(tags.variableName), class: "tok-variableName tok-local" },
+       { tag: tags.definition(tags.variableName), class: "tok-variableName tok-definition" },
+       { tag: tags.special(tags.variableName), class: "tok-variableName2" },
+       { tag: tags.definition(tags.propertyName), class: "tok-propertyName tok-definition" },
+       { tag: tags.typeName, class: "tok-typeName" },
+       { tag: tags.namespace, class: "tok-namespace" },
+       { tag: tags.className, class: "tok-className" },
+       { tag: tags.macroName, class: "tok-macroName" },
+       { tag: tags.propertyName, class: "tok-propertyName" },
+       { tag: tags.operator, class: "tok-operator" },
+       { tag: tags.comment, class: "tok-comment" },
+       { tag: tags.meta, class: "tok-meta" },
+       { tag: tags.invalid, class: "tok-invalid" },
+       { tag: tags.punctuation, class: "tok-punctuation" }
+   ]);
 
    function getSelection(root) {
        let target;
@@ -25637,1006 +26383,17 @@
    GutterMarker.prototype.startSide = GutterMarker.prototype.endSide = -1;
    GutterMarker.prototype.point = true;
 
-   /**
-   The default maximum length of a `TreeBuffer` node.
-   */
-   let nextPropID = 0;
-   /**
-   Each [node type](#common.NodeType) or [individual tree](#common.Tree)
-   can have metadata associated with it in props. Instances of this
-   class represent prop names.
-   */
-   class NodeProp {
-       /**
-       Create a new node prop type.
-       */
-       constructor(config = {}) {
-           this.id = nextPropID++;
-           this.perNode = !!config.perNode;
-           this.deserialize = config.deserialize || (() => {
-               throw new Error("This node type doesn't define a deserialize function");
-           });
-       }
-       /**
-       This is meant to be used with
-       [`NodeSet.extend`](#common.NodeSet.extend) or
-       [`LRParser.configure`](#lr.ParserConfig.props) to compute
-       prop values for each node type in the set. Takes a [match
-       object](#common.NodeType^match) or function that returns undefined
-       if the node type doesn't get this prop, and the prop's value if
-       it does.
-       */
-       add(match) {
-           if (this.perNode)
-               throw new RangeError("Can't add per-node props to node types");
-           if (typeof match != "function")
-               match = NodeType.match(match);
-           return (type) => {
-               let result = match(type);
-               return result === undefined ? null : [this, result];
-           };
-       }
-   }
-   /**
-   Prop that is used to describe matching delimiters. For opening
-   delimiters, this holds an array of node names (written as a
-   space-separated string when declaring this prop in a grammar)
-   for the node types of closing delimiters that match it.
-   */
-   NodeProp.closedBy = new NodeProp({ deserialize: str => str.split(" ") });
-   /**
-   The inverse of [`closedBy`](#common.NodeProp^closedBy). This is
-   attached to closing delimiters, holding an array of node names
-   of types of matching opening delimiters.
-   */
-   NodeProp.openedBy = new NodeProp({ deserialize: str => str.split(" ") });
-   /**
-   Used to assign node types to groups (for example, all node
-   types that represent an expression could be tagged with an
-   `"Expression"` group).
-   */
-   NodeProp.group = new NodeProp({ deserialize: str => str.split(" ") });
-   /**
-   Attached to nodes to indicate these should be
-   [displayed](https://codemirror.net/docs/ref/#language.syntaxTree)
-   in a bidirectional text isolate, so that direction-neutral
-   characters on their sides don't incorrectly get associated with
-   surrounding text. You'll generally want to set this for nodes
-   that contain arbitrary text, like strings and comments, and for
-   nodes that appear _inside_ arbitrary text, like HTML tags. When
-   not given a value, in a grammar declaration, defaults to
-   `"auto"`.
-   */
-   NodeProp.isolate = new NodeProp({ deserialize: value => {
-           if (value && value != "rtl" && value != "ltr" && value != "auto")
-               throw new RangeError("Invalid value for isolate: " + value);
-           return value || "auto";
-       } });
-   /**
-   The hash of the [context](#lr.ContextTracker.constructor)
-   that the node was parsed in, if any. Used to limit reuse of
-   contextual nodes.
-   */
-   NodeProp.contextHash = new NodeProp({ perNode: true });
-   /**
-   The distance beyond the end of the node that the tokenizer
-   looked ahead for any of the tokens inside the node. (The LR
-   parser only stores this when it is larger than 25, for
-   efficiency reasons.)
-   */
-   NodeProp.lookAhead = new NodeProp({ perNode: true });
-   /**
-   This per-node prop is used to replace a given node, or part of a
-   node, with another tree. This is useful to include trees from
-   different languages in mixed-language parsers.
-   */
-   NodeProp.mounted = new NodeProp({ perNode: true });
-   const noProps = Object.create(null);
-   /**
-   Each node in a syntax tree has a node type associated with it.
-   */
-   class NodeType {
-       /**
-       @internal
-       */
-       constructor(
-       /**
-       The name of the node type. Not necessarily unique, but if the
-       grammar was written properly, different node types with the
-       same name within a node set should play the same semantic
-       role.
-       */
-       name, 
-       /**
-       @internal
-       */
-       props, 
-       /**
-       The id of this node in its set. Corresponds to the term ids
-       used in the parser.
-       */
-       id, 
-       /**
-       @internal
-       */
-       flags = 0) {
-           this.name = name;
-           this.props = props;
-           this.id = id;
-           this.flags = flags;
-       }
-       /**
-       Define a node type.
-       */
-       static define(spec) {
-           let props = spec.props && spec.props.length ? Object.create(null) : noProps;
-           let flags = (spec.top ? 1 /* NodeFlag.Top */ : 0) | (spec.skipped ? 2 /* NodeFlag.Skipped */ : 0) |
-               (spec.error ? 4 /* NodeFlag.Error */ : 0) | (spec.name == null ? 8 /* NodeFlag.Anonymous */ : 0);
-           let type = new NodeType(spec.name || "", props, spec.id, flags);
-           if (spec.props)
-               for (let src of spec.props) {
-                   if (!Array.isArray(src))
-                       src = src(type);
-                   if (src) {
-                       if (src[0].perNode)
-                           throw new RangeError("Can't store a per-node prop on a node type");
-                       props[src[0].id] = src[1];
-                   }
-               }
-           return type;
-       }
-       /**
-       Retrieves a node prop for this type. Will return `undefined` if
-       the prop isn't present on this node.
-       */
-       prop(prop) { return this.props[prop.id]; }
-       /**
-       True when this is the top node of a grammar.
-       */
-       get isTop() { return (this.flags & 1 /* NodeFlag.Top */) > 0; }
-       /**
-       True when this node is produced by a skip rule.
-       */
-       get isSkipped() { return (this.flags & 2 /* NodeFlag.Skipped */) > 0; }
-       /**
-       Indicates whether this is an error node.
-       */
-       get isError() { return (this.flags & 4 /* NodeFlag.Error */) > 0; }
-       /**
-       When true, this node type doesn't correspond to a user-declared
-       named node, for example because it is used to cache repetition.
-       */
-       get isAnonymous() { return (this.flags & 8 /* NodeFlag.Anonymous */) > 0; }
-       /**
-       Returns true when this node's name or one of its
-       [groups](#common.NodeProp^group) matches the given string.
-       */
-       is(name) {
-           if (typeof name == 'string') {
-               if (this.name == name)
-                   return true;
-               let group = this.prop(NodeProp.group);
-               return group ? group.indexOf(name) > -1 : false;
-           }
-           return this.id == name;
-       }
-       /**
-       Create a function from node types to arbitrary values by
-       specifying an object whose property names are node or
-       [group](#common.NodeProp^group) names. Often useful with
-       [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-       names, separated by spaces, in a single property name to map
-       multiple node names to a single value.
-       */
-       static match(map) {
-           let direct = Object.create(null);
-           for (let prop in map)
-               for (let name of prop.split(" "))
-                   direct[name] = map[prop];
-           return (node) => {
-               for (let groups = node.prop(NodeProp.group), i = -1; i < (groups ? groups.length : 0); i++) {
-                   let found = direct[i < 0 ? node.name : groups[i]];
-                   if (found)
-                       return found;
-               }
-           };
-       }
-   }
-   /**
-   An empty dummy node type to use when no actual type is available.
-   */
-   NodeType.none = new NodeType("", Object.create(null), 0, 8 /* NodeFlag.Anonymous */);
-   /**
-   Options that control iteration. Can be combined with the `|`
-   operator to enable multiple ones.
-   */
-   var IterMode;
-   (function (IterMode) {
-       /**
-       When enabled, iteration will only visit [`Tree`](#common.Tree)
-       objects, not nodes packed into
-       [`TreeBuffer`](#common.TreeBuffer)s.
-       */
-       IterMode[IterMode["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-       /**
-       Enable this to make iteration include anonymous nodes (such as
-       the nodes that wrap repeated grammar constructs into a balanced
-       tree).
-       */
-       IterMode[IterMode["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-       /**
-       By default, regular [mounted](#common.NodeProp^mounted) nodes
-       replace their base node in iteration. Enable this to ignore them
-       instead.
-       */
-       IterMode[IterMode["IgnoreMounts"] = 4] = "IgnoreMounts";
-       /**
-       This option only applies in
-       [`enter`](#common.SyntaxNode.enter)-style methods. It tells the
-       library to not enter mounted overlays if one covers the given
-       position.
-       */
-       IterMode[IterMode["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-   })(IterMode || (IterMode = {}));
-   new NodeProp({ perNode: true });
-
-   let nextTagID = 0;
-   /**
-   Highlighting tags are markers that denote a highlighting category.
-   They are [associated](#highlight.styleTags) with parts of a syntax
-   tree by a language mode, and then mapped to an actual CSS style by
-   a [highlighter](#highlight.Highlighter).
-
-   Because syntax tree node types and highlight styles have to be
-   able to talk the same language, CodeMirror uses a mostly _closed_
-   [vocabulary](#highlight.tags) of syntax tags (as opposed to
-   traditional open string-based systems, which make it hard for
-   highlighting themes to cover all the tokens produced by the
-   various languages).
-
-   It _is_ possible to [define](#highlight.Tag^define) your own
-   highlighting tags for system-internal use (where you control both
-   the language package and the highlighter), but such tags will not
-   be picked up by regular highlighters (though you can derive them
-   from standard tags to allow highlighters to fall back to those).
-   */
-   class Tag {
-       /**
-       @internal
-       */
-       constructor(
-       /**
-       The optional name of the base tag @internal
-       */
-       name, 
-       /**
-       The set of this tag and all its parent tags, starting with
-       this one itself and sorted in order of decreasing specificity.
-       */
-       set, 
-       /**
-       The base unmodified tag that this one is based on, if it's
-       modified @internal
-       */
-       base, 
-       /**
-       The modifiers applied to this.base @internal
-       */
-       modified) {
-           this.name = name;
-           this.set = set;
-           this.base = base;
-           this.modified = modified;
-           /**
-           @internal
-           */
-           this.id = nextTagID++;
-       }
-       toString() {
-           let { name } = this;
-           for (let mod of this.modified)
-               if (mod.name)
-                   name = `${mod.name}(${name})`;
-           return name;
-       }
-       static define(nameOrParent, parent) {
-           let name = typeof nameOrParent == "string" ? nameOrParent : "?";
-           if (nameOrParent instanceof Tag)
-               parent = nameOrParent;
-           if (parent === null || parent === void 0 ? void 0 : parent.base)
-               throw new Error("Can not derive from a modified tag");
-           let tag = new Tag(name, [], null, []);
-           tag.set.push(tag);
-           if (parent)
-               for (let t of parent.set)
-                   tag.set.push(t);
-           return tag;
-       }
-       /**
-       Define a tag _modifier_, which is a function that, given a tag,
-       will return a tag that is a subtag of the original. Applying the
-       same modifier to a twice tag will return the same value (`m1(t1)
-       == m1(t1)`) and applying multiple modifiers will, regardless or
-       order, produce the same tag (`m1(m2(t1)) == m2(m1(t1))`).
-       
-       When multiple modifiers are applied to a given base tag, each
-       smaller set of modifiers is registered as a parent, so that for
-       example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
-       `m1(m3(t1)`, and so on.
-       */
-       static defineModifier(name) {
-           let mod = new Modifier(name);
-           return (tag) => {
-               if (tag.modified.indexOf(mod) > -1)
-                   return tag;
-               return Modifier.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
-           };
-       }
-   }
-   let nextModifierID = 0;
-   class Modifier {
-       constructor(name) {
-           this.name = name;
-           this.instances = [];
-           this.id = nextModifierID++;
-       }
-       static get(base, mods) {
-           if (!mods.length)
-               return base;
-           let exists = mods[0].instances.find(t => t.base == base && sameArray(mods, t.modified));
-           if (exists)
-               return exists;
-           let set = [], tag = new Tag(base.name, set, base, mods);
-           for (let m of mods)
-               m.instances.push(tag);
-           let configs = powerSet(mods);
-           for (let parent of base.set)
-               if (!parent.modified.length)
-                   for (let config of configs)
-                       set.push(Modifier.get(parent, config));
-           return tag;
-       }
-   }
-   function sameArray(a, b) {
-       return a.length == b.length && a.every((x, i) => x == b[i]);
-   }
-   function powerSet(array) {
-       let sets = [[]];
-       for (let i = 0; i < array.length; i++) {
-           for (let j = 0, e = sets.length; j < e; j++) {
-               sets.push(sets[j].concat(array[i]));
-           }
-       }
-       return sets.sort((a, b) => b.length - a.length);
-   }
-   /**
-   This function is used to add a set of tags to a language syntax
-   via [`NodeSet.extend`](#common.NodeSet.extend) or
-   [`LRParser.configure`](#lr.LRParser.configure).
-
-   The argument object maps node selectors to [highlighting
-   tags](#highlight.Tag) or arrays of tags.
-
-   Node selectors may hold one or more (space-separated) node paths.
-   Such a path can be a [node name](#common.NodeType.name), or
-   multiple node names (or `*` wildcards) separated by slash
-   characters, as in `"Block/Declaration/VariableName"`. Such a path
-   matches the final node but only if its direct parent nodes are the
-   other nodes mentioned. A `*` in such a path matches any parent,
-   but only a single level—wildcards that match multiple parents
-   aren't supported, both for efficiency reasons and because Lezer
-   trees make it rather hard to reason about what they would match.)
-
-   A path can be ended with `/...` to indicate that the tag assigned
-   to the node should also apply to all child nodes, even if they
-   match their own style (by default, only the innermost style is
-   used).
-
-   When a path ends in `!`, as in `Attribute!`, no further matching
-   happens for the node's child nodes, and the entire node gets the
-   given style.
-
-   In this notation, node names that contain `/`, `!`, `*`, or `...`
-   must be quoted as JSON strings.
-
-   For example:
-
-   ```javascript
-   parser.withProps(
-     styleTags({
-       // Style Number and BigNumber nodes
-       "Number BigNumber": tags.number,
-       // Style Escape nodes whose parent is String
-       "String/Escape": tags.escape,
-       // Style anything inside Attributes nodes
-       "Attributes!": tags.meta,
-       // Add a style to all content inside Italic nodes
-       "Italic/...": tags.emphasis,
-       // Style InvalidString nodes as both `string` and `invalid`
-       "InvalidString": [tags.string, tags.invalid],
-       // Style the node named "/" as punctuation
-       '"/"': tags.punctuation
-     })
-   )
-   ```
-   */
-   function styleTags(spec) {
-       let byName = Object.create(null);
-       for (let prop in spec) {
-           let tags = spec[prop];
-           if (!Array.isArray(tags))
-               tags = [tags];
-           for (let part of prop.split(" "))
-               if (part) {
-                   let pieces = [], mode = 2 /* Mode.Normal */, rest = part;
-                   for (let pos = 0;;) {
-                       if (rest == "..." && pos > 0 && pos + 3 == part.length) {
-                           mode = 1 /* Mode.Inherit */;
-                           break;
-                       }
-                       let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
-                       if (!m)
-                           throw new RangeError("Invalid path: " + part);
-                       pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
-                       pos += m[0].length;
-                       if (pos == part.length)
-                           break;
-                       let next = part[pos++];
-                       if (pos == part.length && next == "!") {
-                           mode = 0 /* Mode.Opaque */;
-                           break;
-                       }
-                       if (next != "/")
-                           throw new RangeError("Invalid path: " + part);
-                       rest = part.slice(pos);
-                   }
-                   let last = pieces.length - 1, inner = pieces[last];
-                   if (!inner)
-                       throw new RangeError("Invalid path: " + part);
-                   let rule = new Rule(tags, mode, last > 0 ? pieces.slice(0, last) : null);
-                   byName[inner] = rule.sort(byName[inner]);
-               }
-       }
-       return ruleNodeProp.add(byName);
-   }
-   const ruleNodeProp = new NodeProp();
-   class Rule {
-       constructor(tags, mode, context, next) {
-           this.tags = tags;
-           this.mode = mode;
-           this.context = context;
-           this.next = next;
-       }
-       get opaque() { return this.mode == 0 /* Mode.Opaque */; }
-       get inherit() { return this.mode == 1 /* Mode.Inherit */; }
-       sort(other) {
-           if (!other || other.depth < this.depth) {
-               this.next = other;
-               return this;
-           }
-           other.next = this.sort(other.next);
-           return other;
-       }
-       get depth() { return this.context ? this.context.length : 0; }
-   }
-   Rule.empty = new Rule([], 2 /* Mode.Normal */, null);
-   /**
-   Define a [highlighter](#highlight.Highlighter) from an array of
-   tag/class pairs. Classes associated with more specific tags will
-   take precedence.
-   */
-   function tagHighlighter(tags, options) {
-       let map = Object.create(null);
-       for (let style of tags) {
-           if (!Array.isArray(style.tag))
-               map[style.tag.id] = style.class;
-           else
-               for (let tag of style.tag)
-                   map[tag.id] = style.class;
-       }
-       let { scope, all = null } = options || {};
-       return {
-           style: (tags) => {
-               let cls = all;
-               for (let tag of tags) {
-                   for (let sub of tag.set) {
-                       let tagClass = map[sub.id];
-                       if (tagClass) {
-                           cls = cls ? cls + " " + tagClass : tagClass;
-                           break;
-                       }
-                   }
-               }
-               return cls;
-           },
-           scope
-       };
-   }
-   const t = Tag.define;
-   const comment = t(), name = t(), typeName = t(name), propertyName = t(name), literal = t(), string = t(literal), number = t(literal), content = t(), heading = t(content), keyword = t(), operator = t(), punctuation = t(), bracket = t(punctuation), meta = t();
-   /**
-   The default set of highlighting [tags](#highlight.Tag).
-
-   This collection is heavily biased towards programming languages,
-   and necessarily incomplete. A full ontology of syntactic
-   constructs would fill a stack of books, and be impractical to
-   write themes for. So try to make do with this set. If all else
-   fails, [open an
-   issue](https://github.com/codemirror/codemirror.next) to propose a
-   new tag, or [define](#highlight.Tag^define) a local custom tag for
-   your use case.
-
-   Note that it is not obligatory to always attach the most specific
-   tag possible to an element—if your grammar can't easily
-   distinguish a certain type of element (such as a local variable),
-   it is okay to style it as its more general variant (a variable).
-
-   For tags that extend some parent tag, the documentation links to
-   the parent.
-   */
-   const tags = {
-       /**
-       A comment.
-       */
-       comment,
-       /**
-       A line [comment](#highlight.tags.comment).
-       */
-       lineComment: t(comment),
-       /**
-       A block [comment](#highlight.tags.comment).
-       */
-       blockComment: t(comment),
-       /**
-       A documentation [comment](#highlight.tags.comment).
-       */
-       docComment: t(comment),
-       /**
-       Any kind of identifier.
-       */
-       name,
-       /**
-       The [name](#highlight.tags.name) of a variable.
-       */
-       variableName: t(name),
-       /**
-       A type [name](#highlight.tags.name).
-       */
-       typeName: typeName,
-       /**
-       A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
-       */
-       tagName: t(typeName),
-       /**
-       A property or field [name](#highlight.tags.name).
-       */
-       propertyName: propertyName,
-       /**
-       An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
-       */
-       attributeName: t(propertyName),
-       /**
-       The [name](#highlight.tags.name) of a class.
-       */
-       className: t(name),
-       /**
-       A label [name](#highlight.tags.name).
-       */
-       labelName: t(name),
-       /**
-       A namespace [name](#highlight.tags.name).
-       */
-       namespace: t(name),
-       /**
-       The [name](#highlight.tags.name) of a macro.
-       */
-       macroName: t(name),
-       /**
-       A literal value.
-       */
-       literal,
-       /**
-       A string [literal](#highlight.tags.literal).
-       */
-       string,
-       /**
-       A documentation [string](#highlight.tags.string).
-       */
-       docString: t(string),
-       /**
-       A character literal (subtag of [string](#highlight.tags.string)).
-       */
-       character: t(string),
-       /**
-       An attribute value (subtag of [string](#highlight.tags.string)).
-       */
-       attributeValue: t(string),
-       /**
-       A number [literal](#highlight.tags.literal).
-       */
-       number,
-       /**
-       An integer [number](#highlight.tags.number) literal.
-       */
-       integer: t(number),
-       /**
-       A floating-point [number](#highlight.tags.number) literal.
-       */
-       float: t(number),
-       /**
-       A boolean [literal](#highlight.tags.literal).
-       */
-       bool: t(literal),
-       /**
-       Regular expression [literal](#highlight.tags.literal).
-       */
-       regexp: t(literal),
-       /**
-       An escape [literal](#highlight.tags.literal), for example a
-       backslash escape in a string.
-       */
-       escape: t(literal),
-       /**
-       A color [literal](#highlight.tags.literal).
-       */
-       color: t(literal),
-       /**
-       A URL [literal](#highlight.tags.literal).
-       */
-       url: t(literal),
-       /**
-       A language keyword.
-       */
-       keyword,
-       /**
-       The [keyword](#highlight.tags.keyword) for the self or this
-       object.
-       */
-       self: t(keyword),
-       /**
-       The [keyword](#highlight.tags.keyword) for null.
-       */
-       null: t(keyword),
-       /**
-       A [keyword](#highlight.tags.keyword) denoting some atomic value.
-       */
-       atom: t(keyword),
-       /**
-       A [keyword](#highlight.tags.keyword) that represents a unit.
-       */
-       unit: t(keyword),
-       /**
-       A modifier [keyword](#highlight.tags.keyword).
-       */
-       modifier: t(keyword),
-       /**
-       A [keyword](#highlight.tags.keyword) that acts as an operator.
-       */
-       operatorKeyword: t(keyword),
-       /**
-       A control-flow related [keyword](#highlight.tags.keyword).
-       */
-       controlKeyword: t(keyword),
-       /**
-       A [keyword](#highlight.tags.keyword) that defines something.
-       */
-       definitionKeyword: t(keyword),
-       /**
-       A [keyword](#highlight.tags.keyword) related to defining or
-       interfacing with modules.
-       */
-       moduleKeyword: t(keyword),
-       /**
-       An operator.
-       */
-       operator,
-       /**
-       An [operator](#highlight.tags.operator) that dereferences something.
-       */
-       derefOperator: t(operator),
-       /**
-       Arithmetic-related [operator](#highlight.tags.operator).
-       */
-       arithmeticOperator: t(operator),
-       /**
-       Logical [operator](#highlight.tags.operator).
-       */
-       logicOperator: t(operator),
-       /**
-       Bit [operator](#highlight.tags.operator).
-       */
-       bitwiseOperator: t(operator),
-       /**
-       Comparison [operator](#highlight.tags.operator).
-       */
-       compareOperator: t(operator),
-       /**
-       [Operator](#highlight.tags.operator) that updates its operand.
-       */
-       updateOperator: t(operator),
-       /**
-       [Operator](#highlight.tags.operator) that defines something.
-       */
-       definitionOperator: t(operator),
-       /**
-       Type-related [operator](#highlight.tags.operator).
-       */
-       typeOperator: t(operator),
-       /**
-       Control-flow [operator](#highlight.tags.operator).
-       */
-       controlOperator: t(operator),
-       /**
-       Program or markup punctuation.
-       */
-       punctuation,
-       /**
-       [Punctuation](#highlight.tags.punctuation) that separates
-       things.
-       */
-       separator: t(punctuation),
-       /**
-       Bracket-style [punctuation](#highlight.tags.punctuation).
-       */
-       bracket,
-       /**
-       Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
-       tokens).
-       */
-       angleBracket: t(bracket),
-       /**
-       Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
-       tokens).
-       */
-       squareBracket: t(bracket),
-       /**
-       Parentheses (usually `(` and `)` tokens). Subtag of
-       [bracket](#highlight.tags.bracket).
-       */
-       paren: t(bracket),
-       /**
-       Braces (usually `{` and `}` tokens). Subtag of
-       [bracket](#highlight.tags.bracket).
-       */
-       brace: t(bracket),
-       /**
-       Content, for example plain text in XML or markup documents.
-       */
-       content,
-       /**
-       [Content](#highlight.tags.content) that represents a heading.
-       */
-       heading,
-       /**
-       A level 1 [heading](#highlight.tags.heading).
-       */
-       heading1: t(heading),
-       /**
-       A level 2 [heading](#highlight.tags.heading).
-       */
-       heading2: t(heading),
-       /**
-       A level 3 [heading](#highlight.tags.heading).
-       */
-       heading3: t(heading),
-       /**
-       A level 4 [heading](#highlight.tags.heading).
-       */
-       heading4: t(heading),
-       /**
-       A level 5 [heading](#highlight.tags.heading).
-       */
-       heading5: t(heading),
-       /**
-       A level 6 [heading](#highlight.tags.heading).
-       */
-       heading6: t(heading),
-       /**
-       A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
-       */
-       contentSeparator: t(content),
-       /**
-       [Content](#highlight.tags.content) that represents a list.
-       */
-       list: t(content),
-       /**
-       [Content](#highlight.tags.content) that represents a quote.
-       */
-       quote: t(content),
-       /**
-       [Content](#highlight.tags.content) that is emphasized.
-       */
-       emphasis: t(content),
-       /**
-       [Content](#highlight.tags.content) that is styled strong.
-       */
-       strong: t(content),
-       /**
-       [Content](#highlight.tags.content) that is part of a link.
-       */
-       link: t(content),
-       /**
-       [Content](#highlight.tags.content) that is styled as code or
-       monospace.
-       */
-       monospace: t(content),
-       /**
-       [Content](#highlight.tags.content) that has a strike-through
-       style.
-       */
-       strikethrough: t(content),
-       /**
-       Inserted text in a change-tracking format.
-       */
-       inserted: t(),
-       /**
-       Deleted text.
-       */
-       deleted: t(),
-       /**
-       Changed text.
-       */
-       changed: t(),
-       /**
-       An invalid or unsyntactic element.
-       */
-       invalid: t(),
-       /**
-       Metadata or meta-instruction.
-       */
-       meta,
-       /**
-       [Metadata](#highlight.tags.meta) that applies to the entire
-       document.
-       */
-       documentMeta: t(meta),
-       /**
-       [Metadata](#highlight.tags.meta) that annotates or adds
-       attributes to a given syntactic element.
-       */
-       annotation: t(meta),
-       /**
-       Processing instruction or preprocessor directive. Subtag of
-       [meta](#highlight.tags.meta).
-       */
-       processingInstruction: t(meta),
-       /**
-       [Modifier](#highlight.Tag^defineModifier) that indicates that a
-       given element is being defined. Expected to be used with the
-       various [name](#highlight.tags.name) tags.
-       */
-       definition: Tag.defineModifier("definition"),
-       /**
-       [Modifier](#highlight.Tag^defineModifier) that indicates that
-       something is constant. Mostly expected to be used with
-       [variable names](#highlight.tags.variableName).
-       */
-       constant: Tag.defineModifier("constant"),
-       /**
-       [Modifier](#highlight.Tag^defineModifier) used to indicate that
-       a [variable](#highlight.tags.variableName) or [property
-       name](#highlight.tags.propertyName) is being called or defined
-       as a function.
-       */
-       function: Tag.defineModifier("function"),
-       /**
-       [Modifier](#highlight.Tag^defineModifier) that can be applied to
-       [names](#highlight.tags.name) to indicate that they belong to
-       the language's standard environment.
-       */
-       standard: Tag.defineModifier("standard"),
-       /**
-       [Modifier](#highlight.Tag^defineModifier) that indicates a given
-       [names](#highlight.tags.name) is local to some scope.
-       */
-       local: Tag.defineModifier("local"),
-       /**
-       A generic variant [modifier](#highlight.Tag^defineModifier) that
-       can be used to tag language-specific alternative variants of
-       some common tag. It is recommended for themes to define special
-       forms of at least the [string](#highlight.tags.string) and
-       [variable name](#highlight.tags.variableName) tags, since those
-       come up a lot.
-       */
-       special: Tag.defineModifier("special")
-   };
-   for (let name in tags) {
-       let val = tags[name];
-       if (val instanceof Tag)
-           val.name = name;
-   }
-   /**
-   This is a highlighter that adds stable, predictable classes to
-   tokens, for styling with external CSS.
-
-   The following tags are mapped to their name prefixed with `"tok-"`
-   (for example `"tok-comment"`):
-
-   * [`link`](#highlight.tags.link)
-   * [`heading`](#highlight.tags.heading)
-   * [`emphasis`](#highlight.tags.emphasis)
-   * [`strong`](#highlight.tags.strong)
-   * [`keyword`](#highlight.tags.keyword)
-   * [`atom`](#highlight.tags.atom)
-   * [`bool`](#highlight.tags.bool)
-   * [`url`](#highlight.tags.url)
-   * [`labelName`](#highlight.tags.labelName)
-   * [`inserted`](#highlight.tags.inserted)
-   * [`deleted`](#highlight.tags.deleted)
-   * [`literal`](#highlight.tags.literal)
-   * [`string`](#highlight.tags.string)
-   * [`number`](#highlight.tags.number)
-   * [`variableName`](#highlight.tags.variableName)
-   * [`typeName`](#highlight.tags.typeName)
-   * [`namespace`](#highlight.tags.namespace)
-   * [`className`](#highlight.tags.className)
-   * [`macroName`](#highlight.tags.macroName)
-   * [`propertyName`](#highlight.tags.propertyName)
-   * [`operator`](#highlight.tags.operator)
-   * [`comment`](#highlight.tags.comment)
-   * [`meta`](#highlight.tags.meta)
-   * [`punctuation`](#highlight.tags.punctuation)
-   * [`invalid`](#highlight.tags.invalid)
-
-   In addition, these mappings are provided:
-
-   * [`regexp`](#highlight.tags.regexp),
-     [`escape`](#highlight.tags.escape), and
-     [`special`](#highlight.tags.special)[`(string)`](#highlight.tags.string)
-     are mapped to `"tok-string2"`
-   * [`special`](#highlight.tags.special)[`(variableName)`](#highlight.tags.variableName)
-     to `"tok-variableName2"`
-   * [`local`](#highlight.tags.local)[`(variableName)`](#highlight.tags.variableName)
-     to `"tok-variableName tok-local"`
-   * [`definition`](#highlight.tags.definition)[`(variableName)`](#highlight.tags.variableName)
-     to `"tok-variableName tok-definition"`
-   * [`definition`](#highlight.tags.definition)[`(propertyName)`](#highlight.tags.propertyName)
-     to `"tok-propertyName tok-definition"`
-   */
-   tagHighlighter([
-       { tag: tags.link, class: "tok-link" },
-       { tag: tags.heading, class: "tok-heading" },
-       { tag: tags.emphasis, class: "tok-emphasis" },
-       { tag: tags.strong, class: "tok-strong" },
-       { tag: tags.keyword, class: "tok-keyword" },
-       { tag: tags.atom, class: "tok-atom" },
-       { tag: tags.bool, class: "tok-bool" },
-       { tag: tags.url, class: "tok-url" },
-       { tag: tags.labelName, class: "tok-labelName" },
-       { tag: tags.inserted, class: "tok-inserted" },
-       { tag: tags.deleted, class: "tok-deleted" },
-       { tag: tags.literal, class: "tok-literal" },
-       { tag: tags.string, class: "tok-string" },
-       { tag: tags.number, class: "tok-number" },
-       { tag: [tags.regexp, tags.escape, tags.special(tags.string)], class: "tok-string2" },
-       { tag: tags.variableName, class: "tok-variableName" },
-       { tag: tags.local(tags.variableName), class: "tok-variableName tok-local" },
-       { tag: tags.definition(tags.variableName), class: "tok-variableName tok-definition" },
-       { tag: tags.special(tags.variableName), class: "tok-variableName2" },
-       { tag: tags.definition(tags.propertyName), class: "tok-propertyName tok-definition" },
-       { tag: tags.typeName, class: "tok-typeName" },
-       { tag: tags.namespace, class: "tok-namespace" },
-       { tag: tags.className, class: "tok-className" },
-       { tag: tags.macroName, class: "tok-macroName" },
-       { tag: tags.propertyName, class: "tok-propertyName" },
-       { tag: tags.operator, class: "tok-operator" },
-       { tag: tags.comment, class: "tok-comment" },
-       { tag: tags.meta, class: "tok-meta" },
-       { tag: tags.invalid, class: "tok-invalid" },
-       { tag: tags.punctuation, class: "tok-punctuation" }
-   ]);
-
    var _a;
    /**
    Node prop stored in a parser's top syntax node to provide the
    facet that stores language-specific data for that language.
    */
-   const languageDataProp = /*@__PURE__*/new NodeProp$1();
+   const languageDataProp = /*@__PURE__*/new NodeProp();
    /**
    Syntax node prop used to register sublanguages. Should be added to
    the top level node type for the language.
    */
-   const sublanguageProp = /*@__PURE__*/new NodeProp$1();
+   const sublanguageProp = /*@__PURE__*/new NodeProp();
    /**
    A language object manages parsing and per-language
    [metadata](https://codemirror.net/6/docs/ref/#state.EditorState.languageDataAt). Parse data is
@@ -26714,7 +26471,7 @@
                    result.push({ from, to: from + tree.length });
                    return;
                }
-               let mount = tree.prop(NodeProp$1.mounted);
+               let mount = tree.prop(NodeProp.mounted);
                if (mount) {
                    if (mount.tree.prop(languageDataProp) == this.data) {
                        if (mount.overlay)
@@ -26753,7 +26510,7 @@
    function topNodeAt(state, pos, side) {
        let topLang = state.facet(language), tree = syntaxTree(state).topNode;
        if (!topLang || topLang.allowsNesting) {
-           for (let node = tree; node; node = node.enter(pos, side, IterMode$1.ExcludeBuffers))
+           for (let node = tree; node; node = node.enter(pos, side, IterMode.ExcludeBuffers))
                if (node.type.isTop)
                    tree = node;
        }
@@ -27020,7 +26777,7 @@
                                    cx.scheduleOn = cx.scheduleOn ? Promise.all([cx.scheduleOn, until]) : until;
                            }
                            this.parsedPos = to;
-                           return new Tree(NodeType$1.none, [], [], to - from);
+                           return new Tree(NodeType.none, [], [], to - from);
                        },
                        stoppedAt: null,
                        stopAt() { }
@@ -27287,7 +27044,7 @@
            color: "#f00" }
    ]);
    const noTokens = /*@__PURE__*/Object.create(null);
-   const typeArray = [NodeType$1.none];
+   const typeArray = [NodeType.none];
    const warned = [];
    // Cache of node types by name and tags
    const byTag = /*@__PURE__*/Object.create(null);
@@ -27344,7 +27101,7 @@
        let known = byTag[key];
        if (known)
            return known.id;
-       let type = byTag[key] = NodeType$1.define({
+       let type = byTag[key] = NodeType.define({
            id: typeArray.length,
            name,
            props: [styleTags({ [name]: tags$1 })]
@@ -28762,6 +28519,9 @@
        override: [completeFromList(keywords)]
    });
 
+   //import {example} from "./languageSupport";
+   //import {example} from "./languageSupport";
+   //import {example, exampleCompletion} from "./languageSupport";
    //import { LanguageSupport } from "@codemirror/language";
    //import {uvl} from "./language";
    //import {uvl} from "./highlighting";
@@ -28772,14 +28532,12 @@
             display: block;
             height: 100%;
         }
-
         #editor-container {
             display: flex;
             flex-direction: column;
             height: 500px;
             border: 1px solid #ddd;
         }
-
         #controls {
             display: flex;
             justify-content: space-between;
@@ -28787,13 +28545,11 @@
             background: #f5f5f5;
             border-bottom: 1px solid #ddd;
         }
-
         #editor {
             flex-grow: 1;
             height: 100%;
             overflow: hidden;
         }
-
         .cm-editor {
             height: 100%;
             width: 100%;
@@ -28802,18 +28558,16 @@
 
        firstUpdated(_changedProperties) {
            this.renderRoot.querySelector("#file-input").value = "";
-           const state = EditorState.create({
+
+           this.state = EditorState.create({
                doc: "// Write your UVL structure",
-               // Uncomment and configure the extensions as needed
-               // extensions: [
-               //     minimalSetup,
-               //     new LanguageSupport(uvl),
-               //     // autocompletion({ override: [uvlCompletion] })
-               // ],
+               //TODO: Editor doesnt load when extensions are selected
+               //extensions: [minimalSetup, example()]
+               extensions: []
            });
 
            this.myView = new EditorView$1({
-               state: state,
+               state: this.state,
                parent: this.renderRoot.querySelector("#editor"),
            });
 
