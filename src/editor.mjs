@@ -49,3 +49,27 @@ let editor = new EditorView({
   state: startState,
   parent: document.body
 })
+
+document.getElementById('saveButton').addEventListener('click', () => {
+  const content = editor.state.doc.toString();
+  const blob = new Blob([content], { type: 'text/plain' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "code.txt";
+  link.click();
+});
+
+document.getElementById('loadButton').addEventListener('click', () => {
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    editor.dispatch({
+      changes: { from: 0, to: editor.state.doc.length, insert: e.target.result }
+    });
+  };
+  reader.readAsText(file);
+});
