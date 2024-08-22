@@ -1,7 +1,7 @@
 import {EditorView, basicSetup} from "codemirror"
 import {markdown} from "@codemirror/lang-markdown"
 import {EditorState} from "@codemirror/state";
-import {completion} from "./completion.mjs";
+import {completion} from "./language.mjs";
 
 
 let startState = EditorState.create({

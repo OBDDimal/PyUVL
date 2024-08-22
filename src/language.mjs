@@ -4,8 +4,21 @@ import { styleTags, tags as t } from '@lezer/highlight';
 // parser integration
 import { LanguageSupport } from '@codemirror/language';
 import { LRLanguage } from '@codemirror/language';
+import {autocompletion, completeFromList} from "@codemirror/autocomplete";
 
-// UVL parser
+
+const keywords = [
+    { label: "mandatory", type: "keyword", info: "a mandatory feature"},
+    { label: "optional", type: "keyword" },
+    { label: "alternative", type: "keyword" },
+    { label: "or", type: "keyword" },
+    { label: "{abstract}", type: "keyword" },
+    { label: "featureModel", type: "keyword" },
+    { label: "constraints", type: "keyword" },
+];
+
+// parser creates problems with bundle. Check version
+/*
 let parserWithMetadata = parser.configure({
     props: [
         styleTags({
@@ -23,6 +36,12 @@ let parserWithMetadata = parser.configure({
 const myLanguage = LRLanguage.define({
     parser: parserWithMetadata
 });
+*/
 
 //support for UVL highlighting
-export const support = new LanguageSupport(myLanguage);
+//export const support = new LanguageSupport(myLanguage);
+
+//autocompletion
+export const completion = autocompletion({
+    override: [completeFromList(keywords)],
+});
