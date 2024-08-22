@@ -1,9 +1,9 @@
 //parser
-import {parser} from "./parser.mjs";
-import { styleTags, tags as t } from '@lezer/highlight';
+//import {parser} from "./parser.mjs";
+//import { styleTags, tags as t } from '@lezer/highlight';
 // parser integration
-import { LanguageSupport } from '@codemirror/language';
-import { LRLanguage } from '@codemirror/language';
+//import { LanguageSupport } from '@codemirror/language';
+//import { LRLanguage } from '@codemirror/language';
 import {autocompletion, completeFromList} from "@codemirror/autocomplete";
 
 
