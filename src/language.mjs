@@ -1,3 +1,8 @@
+/*
+commented code is related to the parser and needs some fixing.
+This file contains all the logic and will contain the autocompletion, highlighting and language.
+ */
+
 //parser
 //import {parser} from "./parser.mjs";
 //import { styleTags, tags as t } from '@lezer/highlight';
