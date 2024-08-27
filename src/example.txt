@@ -1,0 +1,36 @@
+features
+    Elevator {abstract}
+        mandatory
+            Behavior {abstract}
+                mandatory
+                    Modes {abstract}
+                        alternative
+                            Sabbath
+                            FIFO
+                            ShortestPath
+                optional
+                    Service
+                    Priorities {abstract}
+                        or
+                            RushHour
+                            FloorPriority
+                            PersonPriority
+        optional
+            VoiceOutput
+            CallButtons {abstract}
+                alternative
+                    DirectedCall
+                    UndirectedCall
+            Security {abstract}
+                mandatory
+                    Permission {abstract}
+                        or
+                            FloorPermission
+                            PermissionControl
+            Safety {abstract}
+                optional
+                    Overloaded
+constraints
+    CallButtons | Sabbath
+    DirectedCall => ShortestPath
+    UndirectedCall => FIFO | ShortestPath

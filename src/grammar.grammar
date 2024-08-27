@@ -1,0 +1,41 @@
+@precedence { first @left, last @left }
+
+@top FeatureModel { featuresSection ConstraintsSection?}
+
+featuresSection {"features" AbstractItem}
+
+Feature { !last identifier }
+AbstractFeature { !last identifier }
+
+AbstractItem { !first AbstractFeature Abstract (State   (Feature | AbstractItem)+ )+ }
+
+Abstract {"{abstract}"}
+
+State{
+  ("mandatory"
+   | "optional"
+   | "alternative"
+   | "or")
+}
+
+ConstraintsSection {
+    "constraints"
+    Constraints+
+}
+ConstraintSign {
+  "|" |
+  "=>"
+}
+ConstraintItem { !last identifier }
+Constraints {
+  (ConstraintItem ConstraintSign ConstraintItem) |
+  (ConstraintItem ConstraintSign Constraints)
+}
+
+@tokens {
+   @precedence { "features", "mandatory", "optional", "alternative", "or", "constraints",identifier }
+  identifier { $[a-zA-Z_]+ }
+  whitespace {$[ \n\r\t]+}
+}
+
+@skip { whitespace }
