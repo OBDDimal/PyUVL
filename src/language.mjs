@@ -1,25 +1,70 @@
 /*
 This file contains all the logic and will contain the autocompletion, highlighting and language for editor.mjs
  */
-
 //parser
 import {parser} from "./parser.mjs";
 import { styleTags, tags as t } from '@lezer/highlight';
 // parser integration
-import { LanguageSupport, HighlightStyle } from '@codemirror/language';
+import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language';
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
-import {autocompletion, completeFromList} from "@codemirror/autocomplete";
+import {autocompletion} from "@codemirror/autocomplete";
 
-//bib for autocompletion. That's the easiest way to complete
-const keywords = [
-    { label: "mandatory", type: "keyword", info: "a mandatory feature"},
-    { label: "optional", type: "keyword" },
-    { label: "alternative", type: "keyword" },
-    { label: "or", type: "keyword" },
-    { label: "{abstract}", type: "keyword" },
-    { label: "featureModel", type: "keyword" },
-    { label: "constraints", type: "keyword" },
-];
+//autocompletion for FeatureNames
+function customAutocomplete(context) {
+    let word = context.matchBefore(/\w*/);
+    if (word.from === word.to && !context.explicit)
+        return null;
+    let text = context.state.doc.toString();
+    let tokens = new Set(text.match(/\b\w+\b/g));
+    // create List
+    let options = [...tokens].map(token => ({
+        label: token,
+        type: "keyword"
+    }));
+
+    return {
+        from: word.from,
+        options
+    };
+}
+//autocompletion for keywords
+function standardAutocomplete(context) {
+    const keywords = ["features", "{abstract}", "mandatory", "optional", "alternative", "or", "constraints"];
+    let word = context.matchBefore(/\w*/);
+    if (word.from === word.to && !context.explicit)
+        return null;
+
+    let options = keywords.map(keyword => ({
+        label: keyword,
+        type: "keyword"
+    }));
+
+    return {
+        from: word.from,
+        options,
+        validFor: /^\w*$/
+    };
+}
+//constraints autocompletion
+function constraintAutocomplete(context) {
+    let word = context.matchBefore(/\w*/);
+    if (word.from === word.to && !context.explicit) return null;
+    let nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
+    if (nodeBefore.name === "ConstraintItem") {
+        // then suggest | and =>
+        return {
+            from: context.pos,
+            options: [
+                { label: " |", type: "operator" },
+                { label: " =>", type: "operator" }
+            ],
+            validFor: /^[|=>]*$/ // Nur für `|` und `=>` gültig
+        };
+    }
+//no suggestion
+    return null;
+}
+
 
 //using unused predefined token to create a color template for the language
 const customHighlightStyle = HighlightStyle.define([
@@ -56,7 +101,7 @@ export const UVLLanguageSupport = new LanguageSupport(myLanguage, [
     syntaxHighlighting(customHighlightStyle)
 ]);
 
-//autocompletion
-export const completion = autocompletion({
-    override: [completeFromList(keywords)],
+//advanced autocompletion
+export const autocompleteExtension = autocompletion({
+    override: [customAutocomplete, standardAutocomplete, constraintAutocomplete]
 });

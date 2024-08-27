@@ -1,6 +1,6 @@
 import {EditorView, basicSetup} from "codemirror"
 import {EditorState} from "@codemirror/state";
-import {completion, UVLLanguageSupport} from "./language.mjs";
+import {UVLLanguageSupport, autocompleteExtension} from "./language.mjs";
 
 
 let startState = EditorState.create({
@@ -41,7 +41,7 @@ let startState = EditorState.create({
       "    CallButtons | Sabbath\n" +
       "    DirectedCall => ShortestPath\n" +
       "    UndirectedCall => FIFO | ShortestPath",
-  extensions: [basicSetup, completion, UVLLanguageSupport],
+  extensions: [basicSetup, autocompleteExtension, UVLLanguageSupport],
 })
 
 let editor = new EditorView({
