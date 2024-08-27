@@ -1,6 +1,5 @@
 /*
-commented code is related to the parser and needs some fixing.
-This file contains all the logic and will contain the autocompletion, highlighting and language.
+This file contains all the logic and will contain the autocompletion, highlighting and language for editor.mjs
  */
 
 //parser
@@ -11,7 +10,7 @@ import { LanguageSupport, HighlightStyle } from '@codemirror/language';
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion, completeFromList} from "@codemirror/autocomplete";
 
-
+//bib for autocompletion. That's the easiest way to complete
 const keywords = [
     { label: "mandatory", type: "keyword", info: "a mandatory feature"},
     { label: "optional", type: "keyword" },
@@ -22,13 +21,14 @@ const keywords = [
     { label: "constraints", type: "keyword" },
 ];
 
-
+//using unused predefined token to create a color template for the language
 const customHighlightStyle = HighlightStyle.define([
     { tag: t.keyword, color: "#ff007f", fontWeight: "bold" },
     { tag: t.typeName, color: "#0022ff"},
     { tag: t.labelName, color: "#431717"},
 ]);
 
+//connecting Token form parser to the color template. Folding and all the other logic is designed to be here
 let parserWithMetadata = parser.configure({
     props: [
         styleTags({
@@ -44,12 +44,14 @@ let parserWithMetadata = parser.configure({
         }),
     ]
 })
-//integration
+//creating a language with the extended parser
+//integration. Could be fused with the export
 const myLanguage = LRLanguage.define({
     parser: parserWithMetadata
 });
 
 //custom highlighting
+//final support containing the parser and highlighting. Could be merged with autocompletion
 export const UVLLanguageSupport = new LanguageSupport(myLanguage, [
     syntaxHighlighting(customHighlightStyle)
 ]);

@@ -72,8 +72,3 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
   };
   reader.readAsText(file);
 });
-
-//Debugging
-editor.dom.addEventListener('input', () => {
-  console.log(editor.state.doc.toString());
-});
