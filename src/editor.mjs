@@ -1,7 +1,6 @@
 import {EditorView, basicSetup} from "codemirror"
-import {markdown} from "@codemirror/lang-markdown"
 import {EditorState} from "@codemirror/state";
-import {completion} from "./language.mjs";
+import {completion, UVLLanguageSupport} from "./language.mjs";
 
 
 let startState = EditorState.create({
@@ -42,7 +41,7 @@ let startState = EditorState.create({
       "    CallButtons | Sabbath\n" +
       "    DirectedCall => ShortestPath\n" +
       "    UndirectedCall => FIFO | ShortestPath",
-  extensions: [basicSetup, markdown(), completion],
+  extensions: [basicSetup, completion, UVLLanguageSupport],
 })
 
 let editor = new EditorView({
@@ -72,4 +71,9 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
     });
   };
   reader.readAsText(file);
+});
+
+//Debugging
+editor.dom.addEventListener('input', () => {
+  console.log(editor.state.doc.toString());
 });
