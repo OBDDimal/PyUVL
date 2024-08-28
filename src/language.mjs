@@ -12,12 +12,15 @@ import {autocompletion} from "@codemirror/autocomplete";
 //autocompletion for FeatureNames
 function customAutocomplete(context) {
     let word = context.matchBefore(/\w*/);
+    const blacklist = new Set(["mandatory", "or", "optional", "alternative", "{abstract}"]);
     if (word.from === word.to && !context.explicit)
         return null;
     let text = context.state.doc.toString();
     let tokens = new Set(text.match(/\b\w+\b/g));
     // create List
-    let options = [...tokens].map(token => ({
+    let options = [...tokens]
+        .filter(token => !blacklist.has(token))
+        .map(token => ({
         label: token,
         type: "keyword"
     }));
@@ -27,7 +30,8 @@ function customAutocomplete(context) {
         options
     };
 }
-//autocompletion for keywords
+//autocompletion for keywords with a line break
+//Todo tabs are missing
 function standardAutocomplete(context) {
     const keywords = ["features", "{abstract}", "mandatory", "optional", "alternative", "or", "constraints"];
     let word = context.matchBefore(/\w*/);
@@ -36,7 +40,8 @@ function standardAutocomplete(context) {
 
     let options = keywords.map(keyword => ({
         label: keyword,
-        type: "keyword"
+        type: "keyword",
+        apply: keyword + '\n'
     }));
 
     return {
