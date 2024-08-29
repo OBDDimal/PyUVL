@@ -38,10 +38,13 @@ function standardAutocomplete(context) {
     if (word.from === word.to && !context.explicit)
         return null;
 
+    const startOfWord = word.from;
+    const spacesAfterWord = 4;
+
     let options = keywords.map(keyword => ({
         label: keyword,
         type: "keyword",
-        apply: keyword + '\n'
+        apply: keyword + '\n' + ' '.repeat(word.from - context.state.doc.lineAt(word.from).from + 4)
     }));
 
     return {
