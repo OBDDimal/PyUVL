@@ -80,23 +80,49 @@ function constraintAutocomplete(context) {
 
 //using unused predefined token to create a color template for the language
 const customHighlightStyle = HighlightStyle.define([
-    { tag: t.keyword, color: "#ff007f", fontWeight: "bold" },
+    { tag: t.keyword, color: "#008080", fontWeight: "bold" },
     { tag: t.typeName, color: "#0022ff"},
-    { tag: t.labelName, color: "#5bc832"},
+    { tag: t.tagName, color: "#0022ff", fontWeight: "bold"},
+    { tag: t.operator, color: "#404080"},
+    { tag: t.bracket, color: "#ae2eae", fontWeight: "bold"},
+    // up old down new
+/*
+//Current theme
+    { tag: t.labelName, color: "#60B0FF"},
+    { tag: t.labelName, color: "#B0FFF0"},
+    { tag: t.labelName, color: "#60B0FF"},
+    { tag: t.labelName, color: "#8080A0"},
+    { tag: t.labelName, color: "#7090B0"},
+    { tag: t.labelName, color: "#999999"}, //undefined
+    { tag: t.labelName, color: "#404080"}, //comment
+    { tag: t.labelName, color: "#60B0FF"},
+    { tag: t.labelName, color: "#A0A0FF"}, //operator
+    { tag: t.labelName, color: "#008080"},
+    { tag: t.labelName, color: "#A0A0FF"},
+    { tag: t.labelName, color: "#80A0FF"},
+    { tag: t.labelName, color: "#70E080"},
+    { tag: t.labelName, color: "#50A0A0"},
+    { tag: t.labelName, color: "#009090"},
+    { tag: t.labelName, color: "#B0FFF0"},
+    { tag: t.labelName, color: "#D0D0FF"},
+ */
 ]);
 
 //connecting Token form parser to the color template. Folding and all the other logic is designed to be here
 let parserWithMetadata = parser.configure({
     props: [
         styleTags({
-            " AbstractItem State ConstraintSign": t.keyword,
+            " AbstractItem State": t.keyword,
             ConstraintItem: t.typeName,
             Feature: t.typeName,
             FeatureModel: t.keyword,
-            AbstractFeature: t.labelName,
-            Abstract: t.labelName,
+            AbstractFeature: t.tagName,
             Brackets: t.labelName,
             Neg: t.keyword,
+            ConstraintSign: t.operator,
+            OpenBracket: t.bracket,
+            CloseBracket: t.bracket,
+
             Identifier: t.variableName,
             LineComment: t.lineComment,
             "{ }": t.brace
@@ -145,6 +171,25 @@ function lintExample(view) {
     return diagnostics;
 }
 export const lintExtension = linter(lintExample);
+
+//three times the charm
+const regexpLinter = linter(view => {
+    let diagnostics = [];
+    syntaxTree(view.state).cursor().iterate(node => {
+        if (node.name === "RegExp") diagnostics.push({
+            from: node.from,
+            to: node.to,
+            severity: "warning",
+            message: "Regular expressions are FORBIDDEN",
+            actions: [{
+                name: "Remove",
+                apply(view, from, to) { view.dispatch({changes: {from, to}}) }
+            }]
+        })
+    })
+    return diagnostics
+})
+
 
 //creating a language with the extended parser
 //integration. Could be fused with the export
