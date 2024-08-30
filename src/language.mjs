@@ -103,6 +103,8 @@ let parserWithMetadata = parser.configure({
 
 //error highlighting as a extension to the language support
 //ToDO under development
+//https://discuss.codemirror.net/t/showing-syntax-errors/3111/5
+//how about scrolling down
 function errorDetection(extension) {
     return EditorState.transactionFilter.of((tr) => {
         if (tr.docChanged) {
