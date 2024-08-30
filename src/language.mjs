@@ -8,6 +8,11 @@ import { styleTags, tags as t } from '@lezer/highlight';
 import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language';
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
+//error state //dev
+import {EditorState, RangeSetBuilder} from "@codemirror/state";
+//new install
+//ToDO check dependency
+import {Decoration} from "@codemirror/view";
 
 //autocompletion for FeatureNames
 function customAutocomplete(context) {
@@ -36,9 +41,6 @@ function standardAutocomplete(context) {
     let word = context.matchBefore(/\w*/);
     if (word.from === word.to && !context.explicit)
         return null;
-
-    const startOfWord = word.from;
-    const spacesAfterWord = 4;
 
     let options = keywords.map(keyword => ({
         label: keyword,
@@ -99,7 +101,24 @@ let parserWithMetadata = parser.configure({
     ]
 })
 
-
+//error highlighting as a extension to the language support
+//ToDO under development
+function errorDetection(extension) {
+    return EditorState.transactionFilter.of((tr) => {
+        if (tr.docChanged) {
+            const builder = new RangeSetBuilder();
+            const doc = tr.state.doc;
+            doc.iter((from, to, text) => {
+                //ToDO css not defined yet
+                builder.add(from, to, Decoration.mark({ class: "cm-error" }));
+            });
+            return tr.state.update({
+                effects: extension.of(builder.finish())
+            });
+        }
+        return tr;
+    });
+}
 
 //creating a language with the extended parser
 //integration. Could be fused with the export
