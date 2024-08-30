@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
-import { UVLLanguageSupport, autocompleteExtension } from './language.mjs';
+import {UVLLanguageSupport, autocompleteExtension, lintExtension} from './language.mjs';
 
 class CodeMirrorEditor extends LitElement {
   static styles = css`
@@ -59,7 +59,12 @@ constraints
     CallButtons | Sabbath
     DirectedCall => ShortestPath
     UndirectedCall => FIFO | ShortestPath`,
-      extensions: [basicSetup, autocompleteExtension, UVLLanguageSupport],
+      extensions: [
+          basicSetup,
+          autocompleteExtension,
+          UVLLanguageSupport,
+          lintExtension
+      ],
     });
 
     this.editor = new EditorView({

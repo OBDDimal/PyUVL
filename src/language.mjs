@@ -13,6 +13,9 @@ import {EditorState, RangeSetBuilder} from "@codemirror/state";
 //new install
 //ToDO check dependency
 import {Decoration} from "@codemirror/view";
+import { StateField } from "@codemirror/state";
+import {EditorView} from "codemirror";
+import { linter } from "@codemirror/lint";
 
 //autocompletion for FeatureNames
 function customAutocomplete(context) {
@@ -121,6 +124,27 @@ function errorDetection(extension) {
         return tr;
     });
 }
+//new try
+function lintExample(view) {
+    const diagnostics = [];
+    //iterate
+    syntaxTree(view.state).iterate({
+        enter: (type, from, to) => {
+            if (type.name === "⚠") {
+                //add error to list
+                diagnostics.push({
+                    from: from,
+                    to: to,
+                    severity: "error",
+                    message: "That's a syntax error."
+                });
+            }
+        },
+    });
+
+    return diagnostics;
+}
+export const lintExtension = linter(lintExample);
 
 //creating a language with the extended parser
 //integration. Could be fused with the export
