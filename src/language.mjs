@@ -31,7 +31,6 @@ function customAutocomplete(context) {
     };
 }
 //autocompletion for keywords with a line break
-//Todo tabs are missing
 function standardAutocomplete(context) {
     const keywords = ["features", "{abstract}", "mandatory", "optional", "alternative", "or", "constraints"];
     let word = context.matchBefore(/\w*/);
@@ -78,7 +77,7 @@ function constraintAutocomplete(context) {
 const customHighlightStyle = HighlightStyle.define([
     { tag: t.keyword, color: "#ff007f", fontWeight: "bold" },
     { tag: t.typeName, color: "#0022ff"},
-    { tag: t.labelName, color: "#431717"},
+    { tag: t.labelName, color: "#5bc832"},
 ]);
 
 //connecting Token form parser to the color template. Folding and all the other logic is designed to be here
@@ -91,12 +90,17 @@ let parserWithMetadata = parser.configure({
             FeatureModel: t.keyword,
             AbstractFeature: t.labelName,
             Abstract: t.labelName,
+            Brackets: t.labelName,
+            Neg: t.keyword,
             Identifier: t.variableName,
             LineComment: t.lineComment,
             "{ }": t.brace
         }),
     ]
 })
+
+
+
 //creating a language with the extended parser
 //integration. Could be fused with the export
 const myLanguage = LRLanguage.define({
