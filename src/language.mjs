@@ -112,9 +112,10 @@ const customHighlightStyle = HighlightStyle.define([
 let parserWithMetadata = parser.configure({
     props: [
         styleTags({
-            " AbstractItem State": t.keyword,
+            " AbstractItem": t.keyword,
+            State: t.tagName,
             ConstraintItem: t.typeName,
-            Feature: t.typeName,
+            Feature: t.keyword,
             FeatureModel: t.keyword,
             AbstractFeature: t.tagName,
             Brackets: t.labelName,
@@ -150,45 +151,32 @@ function errorDetection(extension) {
         return tr;
     });
 }
-//new try
-function lintExample(view) {
-    const diagnostics = [];
-    //iterate
-    syntaxTree(view.state).iterate({
-        enter: (type, from, to) => {
-            if (type.name === "⚠") {
-                //add error to list
-                diagnostics.push({
-                    from: from,
-                    to: to,
-                    severity: "error",
-                    message: "That's a syntax error."
-                });
-            }
-        },
+
+//three times the charm
+export const customLinter = linter(view => {
+    let diagnostics = [];
+
+    // create syntax tree
+    const blacklist = ["indent", "dedent", "blankLineStart", "Comment", "Tree", "Feature",
+        "AbstractFeature", "AbstractItem", "State", "Constraints", "ConstraintsItem", "Neg", "ConstraintSign",
+        "Brackets", "OpenBracket", "CloseBracket"]
+    syntaxTree(view.state).cursor().iterate(node => {
+        if (!blacklist.includes(node.name)) {
+            diagnostics.push({
+                from: node.from,
+                to: node.to,
+                severity: "error",
+                message: "Regular expressions are FORBIDDEN",
+                actions: [{
+                    name: "Remove",
+                    apply(view, from, to) { view.dispatch({changes: {from, to}}) }
+                }]
+            });
+        }
     });
 
     return diagnostics;
-}
-export const lintExtension = linter(lintExample);
-
-//three times the charm
-const regexpLinter = linter(view => {
-    let diagnostics = [];
-    syntaxTree(view.state).cursor().iterate(node => {
-        if (node.name === "RegExp") diagnostics.push({
-            from: node.from,
-            to: node.to,
-            severity: "warning",
-            message: "Regular expressions are FORBIDDEN",
-            actions: [{
-                name: "Remove",
-                apply(view, from, to) { view.dispatch({changes: {from, to}}) }
-            }]
-        })
-    })
-    return diagnostics
-})
+});
 
 
 //creating a language with the extended parser
