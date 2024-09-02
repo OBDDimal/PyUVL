@@ -1,6 +1,7 @@
 /*
 This file contains all the logic and will contain the autocompletion, highlighting and language for editor.mjs
  */
+//ToDo cleanup package.json
 //parser
 import {parser} from "./parser.mjs";
 import { styleTags, tags as t } from '@lezer/highlight';
@@ -8,13 +9,8 @@ import { styleTags, tags as t } from '@lezer/highlight';
 import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language';
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
-//error state //dev
-import {EditorState, RangeSetBuilder} from "@codemirror/state";
 //new install
 //ToDO check dependency
-import {Decoration} from "@codemirror/view";
-import { StateField } from "@codemirror/state";
-import {EditorView} from "codemirror";
 import { linter } from "@codemirror/lint";
 
 //autocompletion for FeatureNames
@@ -132,27 +128,6 @@ let parserWithMetadata = parser.configure({
 })
 
 //error highlighting as a extension to the language support
-//ToDO under development
-//https://discuss.codemirror.net/t/showing-syntax-errors/3111/5
-//how about scrolling down
-function errorDetection(extension) {
-    return EditorState.transactionFilter.of((tr) => {
-        if (tr.docChanged) {
-            const builder = new RangeSetBuilder();
-            const doc = tr.state.doc;
-            doc.iter((from, to, text) => {
-                //ToDO css not defined yet
-                builder.add(from, to, Decoration.mark({ class: "cm-error" }));
-            });
-            return tr.state.update({
-                effects: extension.of(builder.finish())
-            });
-        }
-        return tr;
-    });
-}
-
-//three times the charm
 export const customLinter = linter(view => {
     let diagnostics = [];
 
