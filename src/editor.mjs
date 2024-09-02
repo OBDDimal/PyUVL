@@ -1,15 +1,10 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html } from 'lit';
 import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
-import {UVLLanguageSupport, autocompleteExtension, lintExtension} from './language.mjs';
+import {UVLLanguageSupport, autocompleteExtension, customLinter} from './language.mjs';
+import {lintGutter} from "@codemirror/lint";
 
 class CodeMirrorEditor extends LitElement {
-  static styles = css`
-    .editor-container {
-      border: 1px solid #ddd;
-      padding: 10px;
-    }
-  `;
 
   constructor() {
     super();
@@ -63,7 +58,8 @@ constraints
           basicSetup,
           autocompleteExtension,
           UVLLanguageSupport,
-          lintExtension
+          customLinter,
+          lintGutter(),
       ],
     });
 
