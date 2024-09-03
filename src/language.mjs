@@ -136,7 +136,7 @@ export const customLinter = linter(view => {
         "AbstractFeature", "AbstractItem", "State", "Constraints", "ConstraintsItem", "Neg", "ConstraintSign",
         "Brackets", "OpenBracket", "CloseBracket"]
     syntaxTree(view.state).cursor().iterate(node => {
-        if (!blacklist.includes(node.name)) {
+        if (!blacklist.includes(node.name) || node.node === "RegExp") {
             diagnostics.push({
                 from: node.from,
                 to: node.to,
