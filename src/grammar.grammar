@@ -1,4 +1,4 @@
-@precedence { first @left, last @left }
+@precedence { first @left, last @left, card, att}
 
 @top Tree { featuresSection constraintsSection }
 
@@ -6,13 +6,23 @@ featuresSection {identifier lineEnd featureBlock }
 
 AbstractItem { !first Feature abstract }
 
-//!Cardinality block
-Cardinality {!first "cardinality " "[" Min ".." Max "]"}
+//!Cardinality block (Level 1)
+Cardinality {!last "cardinality " "[" Min ".." Max "]"}
 Min {number}
 Max {number}
 //!Cardinality block End
 
-Feature { !last (identifier | string) Cardinality? }
+//! Arithmetic block (Level 2)
+Attribute { identifier | string }
+AttributeItem {!first "{" Attribute AttributeValue "}"}
+AttributeValue { number }
+Operation { sum | avg }
+sum {"sum" "(" Attribute ")"}
+avg { "avg" "(" Attribute ")"}
+Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
+//! Arithmetic block End
+
+Feature { !last (identifier | string) Cardinality? AttributeItem?}
 
 //!check if ReqExp is still required after Level 3
 ReqExp { !last (identifier | string) }
@@ -53,6 +63,7 @@ CloseBracket {
 }
 
 Constraints {
+  (!last Operation Operator number (ConstraintSign ConstraintsItem))
   (!last ConstraintsItem ConstraintSign ConstraintsItem) |
   (!first ConstraintsItem ConstraintSign Constraints) |
   (!first Constraints ConstraintSign ConstraintsItem) |
@@ -93,7 +104,7 @@ lineEnd { newline | eof }
 //!tokens
 
 @tokens {
-  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality",identifier}
+  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", number, identifier}
   spaces { $[ \t]+ }
   newline { "\n" }
   eof { @eof }
