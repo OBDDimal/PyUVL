@@ -5,7 +5,7 @@ features
                 mandatory
                     Modes {abstract}
                         alternative
-                            Sabbath
+                            "Sabbath" cardinality [1..4]
                             FIFO
                             ShortestPath
                 optional
@@ -30,7 +30,8 @@ features
             Safety {abstract}
                 optional
                     Overloaded
+
 constraints
-    CallButtons | Sabbath
+    CallButtons | !Sabbath
     DirectedCall => ShortestPath
-    UndirectedCall => FIFO | ShortestPath
+    UndirectedCall => !(FIFO | ShortestPath)
