@@ -1,15 +1,16 @@
 @precedence { first @left, last @left }
 
-@top FeatureModel { featuresSection ConstraintsSection?}
+@top Tree { featuresSection constraintsSection }
 
-featuresSection {"features" AbstractItem}
+featuresSection {identifier lineEnd featureBlock }
 
-Feature { !last identifier }
-AbstractFeature { !last identifier }
+AbstractItem { !first Feature abstract }
 
-AbstractItem { !first AbstractFeature Abstract (State   (Feature | AbstractItem)+ )+ }
+Feature { !last (identifier | string) RegExp*}
+RegExp { (identifier | string) }
+AbstractFeature { !last AbstractItem lineEnd stateBlock+}
 
-Abstract {"{abstract}"}
+abstract {"{abstract}"}
 
 State{
   ("mandatory"
@@ -18,24 +19,76 @@ State{
    | "or")
 }
 
-ConstraintsSection {
-    "constraints"
-    Constraints+
+constraintsSection {
+    "constraints" lineEnd constraintsBlock+
 }
+
 ConstraintSign {
-  "|" |
-  "=>"
+  "|" | "=>" | "&"
 }
-ConstraintItem { !last identifier }
+
+ConstraintsItem {
+  Neg? Feature
+}
+Neg {
+  "!"
+}
+Brackets {
+ Neg? OpenBracket Constraints CloseBracket
+}
+OpenBracket {
+  "("
+}
+CloseBracket {
+  ")"
+}
+
 Constraints {
-  (ConstraintItem ConstraintSign ConstraintItem) |
-  (ConstraintItem ConstraintSign Constraints)
+  (!last ConstraintsItem ConstraintSign ConstraintsItem) |
+  (!first ConstraintsItem ConstraintSign Constraints) |
+  (!first Constraints ConstraintSign ConstraintsItem) |
+  (!first Constraints ConstraintSign Constraints) |
+  (Brackets)
 }
+
+//!block
+
+stateBlock { indent  (State lineEnd featureBlock)+ (dedent | eof) }
+featureBlock { indent (Feature lineEnd | AbstractFeature)+ (dedent | eof) }
+constraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
+
+//!skip
+
+@skip {
+  spaces |
+  Comment |
+  blankLineStart (spaces | Comment)* lineEnd
+}
+
+//!lineEnd
+
+lineEnd { newline | eof }
+
+//!context
+
+@context trackIndent from "./tokens.js"
+
+//!externalTokens
+
+@external tokens indentation from "./tokens.js" {
+  indent
+  dedent
+  blankLineStart
+}
+
+//!tokens
 
 @tokens {
-   @precedence { "features", "mandatory", "optional", "alternative", "or", "constraints",identifier }
-  identifier { $[a-zA-Z_]+ }
-  whitespace {$[ \n\r\t]+}
+  @precedence {"mandatory", "optional", "alternative", "or", "constraints",identifier }
+  spaces { $[ \t]+ }
+  newline { "\n" }
+  eof { @eof }
+  Comment { "#" ![\n]+ }
+  string { '"' (!["\\] | "\\" _)* '"' }
+  identifier { $[a-zA-Z0-9_]+ }
 }
-
-@skip { whitespace }
