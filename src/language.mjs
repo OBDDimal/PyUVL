@@ -12,6 +12,7 @@ import {autocompletion} from "@codemirror/autocomplete";
 //new install
 //ToDO check dependency
 import { linter } from "@codemirror/lint";
+import {AbstractItem, AttributeItem, ConstraintSign, Operator} from "./lang.terms.js";
 
 //autocompletion for FeatureNames
 function customAutocomplete(context) {
@@ -111,23 +112,26 @@ let parserWithMetadata = parser.configure({
             //keyword colour
             AbstractItem: t.keyword,
             Feature: t.keyword,
+            Attribute: t.keyword,
             FeatureModel: t.keyword,
-            Neg: t.keyword,
             //tagName colour
             State: t.tagName,
+            Neg: t.keyword,
+            AttributeItem: t.tagName,
+            Operator: t.tagName,
+            ConstraintSign: t.tagName,
+            Cardinality: t.tagName,
             AbstractFeature: t.tagName,
             //labelName colour not defined
-            Brackets: t.labelName,
+            Brackets: t.bracket,
+            Operation: t.bracket,
             //typeName colour
             ConstraintItem: t.typeName,
             //other
-            ConstraintSign: t.operator,
             OpenBracket: t.bracket,
             CloseBracket: t.bracket,
             //rest
-            Identifier: t.variableName,
             LineComment: t.lineComment,
-            "{ }": t.brace
         }),
     ]
 })
@@ -135,9 +139,6 @@ let parserWithMetadata = parser.configure({
 //error highlighting as a extension to the language support
 export const customLinter = linter(view => {
     let diagnostics = [];
-    const blacklist = ["indent", "dedent", "blankLineStart", "Comment", "Tree", "Feature",
-        "AbstractFeature", "AbstractItem", "State", "Constraints", "ConstraintsItem", "Neg", "ConstraintSign",
-        "Brackets", "OpenBracket", "CloseBracket"];
     const list = [
         "indent",
         "dedent",
