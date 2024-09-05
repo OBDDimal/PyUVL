@@ -1,6 +1,8 @@
+//! ToDo refacotoring required
+
 @precedence { first @left, last @left, card, att}
 
-@top Tree { featuresSection constraintsSection }
+@top Tree { featuresSection constraintsSection? }
 
 featuresSection {identifier lineEnd featureBlock }
 
@@ -14,7 +16,8 @@ Max {number}
 
 //! Arithmetic block (Level 2)
 Attribute { identifier | string }
-AttributeItem {!first "{" Attribute AttributeValue "}"}
+AttributeItem {!first "{" list<AttributeSelection> "}"}
+AttributeSelection { (Attribute AttributeValue) | (Attribute "'" identifier "'")}
 AttributeValue { number }
 Operation { sum | avg }
 sum {"sum" "(" Attribute ")"}
@@ -23,9 +26,12 @@ Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
 //! Arithmetic block End
 
 Feature { !last (identifier | string) Cardinality? AttributeItem?}
+Type { "Integer" | "String" | "Real" | "Boolean"}
+TypeFeature { Type Feature }
 
 //!check if ReqExp is still required after Level 3
 ReqExp { !last (identifier | string) }
+list<item> { item ("," item)* }
 
 AbstractFeature { !last AbstractItem lineEnd stateBlock+}
 
@@ -63,7 +69,7 @@ CloseBracket {
 }
 
 Constraints {
-  (!last Operation Operator number (ConstraintSign ConstraintsItem))
+  (!last Operation Operator number (ConstraintSign ConstraintsItem)?) |
   (!last ConstraintsItem ConstraintSign ConstraintsItem) |
   (!first ConstraintsItem ConstraintSign Constraints) |
   (!first Constraints ConstraintSign ConstraintsItem) |
@@ -74,7 +80,7 @@ Constraints {
 //!block
 
 stateBlock { indent  (State lineEnd featureBlock)+ (dedent | eof) }
-featureBlock { indent (Feature lineEnd | AbstractFeature)+ (dedent | eof) }
+featureBlock { indent ((TypeFeature | Feature) lineEnd | AbstractFeature)+ (dedent | eof) }
 constraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
 
 //!skip
@@ -104,7 +110,7 @@ lineEnd { newline | eof }
 //!tokens
 
 @tokens {
-  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", number, identifier}
+  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean", number, identifier}
   spaces { $[ \t]+ }
   newline { "\n" }
   eof { @eof }
