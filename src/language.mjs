@@ -12,7 +12,7 @@ import {autocompletion} from "@codemirror/autocomplete";
 //new install
 //ToDO check dependency
 import { linter } from "@codemirror/lint";
-import {AbstractItem, AttributeItem, ConstraintSign, Operator} from "./lang.terms.js";
+import {AbstractItem, AttributeItem, ConstraintSign, Operator} from "./parser.terms.mjs";
 
 //autocompletion for FeatureNames
 function customAutocomplete(context) {
