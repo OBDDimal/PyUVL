@@ -24,8 +24,8 @@ class CodeMirrorEditor extends LitElement {
                 mandatory
                     Modes {abstract}
                         alternative
-                            Sabbath
-                            FIFO
+                            "Sabbath" cardinality [1..4] {Power 190, Test 199, hallo 'hey'}
+                            FIFO {Power 5}
                             ShortestPath
                 optional
                     Service
@@ -44,16 +44,19 @@ class CodeMirrorEditor extends LitElement {
                 mandatory
                     Permission {abstract}
                         or
-                            FloorPermission
+                            Integer FloorPermission
                             PermissionControl
             Safety {abstract}
                 optional
                     Overloaded
 
 constraints
-    CallButtons | Sabbath
+    CallButtons | !Sabbath
     DirectedCall => ShortestPath
-    UndirectedCall => FIFO | ShortestPath`,
+    UndirectedCall => !(FIFO | ShortestPath)
+    sum(Power) > 120 => Large
+    sum(Power) + 120 => Power
+`,
       extensions: [
           basicSetup,
           autocompleteExtension,

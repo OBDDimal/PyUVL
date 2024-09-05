@@ -108,18 +108,23 @@ const customHighlightStyle = HighlightStyle.define([
 let parserWithMetadata = parser.configure({
     props: [
         styleTags({
-            " AbstractItem": t.keyword,
-            State: t.tagName,
-            ConstraintItem: t.typeName,
+            //keyword colour
+            AbstractItem: t.keyword,
             Feature: t.keyword,
             FeatureModel: t.keyword,
-            AbstractFeature: t.tagName,
-            Brackets: t.labelName,
             Neg: t.keyword,
+            //tagName colour
+            State: t.tagName,
+            AbstractFeature: t.tagName,
+            //labelName colour not defined
+            Brackets: t.labelName,
+            //typeName colour
+            ConstraintItem: t.typeName,
+            //other
             ConstraintSign: t.operator,
             OpenBracket: t.bracket,
             CloseBracket: t.bracket,
-
+            //rest
             Identifier: t.variableName,
             LineComment: t.lineComment,
             "{ }": t.brace
@@ -130,13 +135,42 @@ let parserWithMetadata = parser.configure({
 //error highlighting as a extension to the language support
 export const customLinter = linter(view => {
     let diagnostics = [];
-
-    // create syntax tree
     const blacklist = ["indent", "dedent", "blankLineStart", "Comment", "Tree", "Feature",
         "AbstractFeature", "AbstractItem", "State", "Constraints", "ConstraintsItem", "Neg", "ConstraintSign",
-        "Brackets", "OpenBracket", "CloseBracket"]
+        "Brackets", "OpenBracket", "CloseBracket"];
+    const list = [
+        "indent",
+        "dedent",
+        "blankLineStart",
+        "Comment",
+        "Tree",
+        "TypeFeature",
+        "Type",
+        "Feature",
+        "Cardinality",
+        "Min",
+        "Max",
+        "AttributeItem",
+        "AttributeSelection",
+        "Attribute",
+        "AttributeValue",
+        "AbstractFeature",
+        "AbstractItem",
+        "State",
+        "Constraints",
+        "Operation",
+        "Operator",
+        "ConstraintSign",
+        "ConstraintsItem",
+        "Neg",
+        "Brackets",
+        "OpenBracket",
+        "CloseBracket"
+    ]
+
     syntaxTree(view.state).cursor().iterate(node => {
-        if (!blacklist.includes(node.name) || node.node === "RegExp") {
+        //blacklist
+        if (!list.includes(node.name) || node.node === "RegExp") {
             diagnostics.push({
                 from: node.from,
                 to: node.to,
@@ -144,9 +178,30 @@ export const customLinter = linter(view => {
                 message: "Regular expressions are FORBIDDEN",
                 actions: [{
                     name: "Remove",
-                    apply(view, from, to) { view.dispatch({changes: {from, to}}) }
+                    apply(view, from, to) { view.dispatch({ changes: { from, to } }) }
                 }]
             });
+        }
+
+        // cardinality [Min..Max]
+        if (node.name === "Cardinality") {
+            const text = view.state.doc.sliceString(node.from, node.to);
+            const match = text.match(/\[\s*(\d+)\s*\.\.\s*(\d+)\s*\]/);
+
+            if (match) {
+                let min = parseInt(match[1], 10);
+                let max = parseInt(match[2], 10);
+
+                if (min >= max) {
+                    // Max Min error
+                    diagnostics.push({
+                        from: node.from,
+                        to: node.to,
+                        severity: "error",
+                        message: `Invalid cardinality: Min (${min}) must be less than Max (${max})`,
+                    });
+                }
+            }
         }
     });
 
