@@ -31,9 +31,9 @@ class CodeMirrorEditor extends LitElement {
                     Service
                     Priorities {abstract}
                         or
-                            RushHour
-                            FloorPriority
-                            PersonPriority
+                            String RushHour
+                            Integer FloorPriority
+                            Real PersonPriority
         optional
             VoiceOutput
             CallButtons {abstract}
@@ -56,6 +56,7 @@ constraints
     UndirectedCall => !(FIFO | ShortestPath)
     sum(Power) > 120 => Large
     sum(Power) + 120 => Power
+
 `,
       extensions: [
           basicSetup,

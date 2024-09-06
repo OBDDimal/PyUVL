@@ -1,7 +1,6 @@
 /*
 This file contains all the logic and will contain the autocompletion, highlighting and language for editor.mjs
  */
-//ToDo cleanup package.json
 //parser
 import {parser} from "./parser.mjs";
 import { styleTags, tags as t } from '@lezer/highlight';
@@ -9,12 +8,11 @@ import { styleTags, tags as t } from '@lezer/highlight';
 import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language';
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
-//new install
-//ToDO check dependency
 import { linter } from "@codemirror/lint";
-import {AbstractItem, AttributeItem, ConstraintSign, Operator} from "./parser.terms.mjs";
+import {AbstractItem, AttributeItem, ConstraintSign, ExtendedFeature, Operator} from "./parser.terms.mjs";
 
 //autocompletion for FeatureNames
+//ToDO remove in next patch
 function customAutocomplete(context) {
     let word = context.matchBefore(/\w*/);
     const blacklist = new Set(["mandatory", "or", "optional", "alternative", "{abstract}"]);
@@ -65,14 +63,51 @@ function constraintAutocomplete(context) {
             from: context.pos,
             options: [
                 { label: " |", type: "operator" },
-                { label: " =>", type: "operator" }
+                { label: " =>", type: "operator" },
+                { label: " &", type: "operator" }
             ],
-            validFor: /^[|=>]*$/ // Nur für `|` und `=>` gültig
+            validFor: /^[|=>&]*$/ // valid for
         };
     }
 //no suggestion
     return null;
 }
+function constraintAutocomplete2(context) {
+    let word = context.matchBefore(/\w*/);
+    if (word.from === word.to && !context.explicit) return null;
+
+    let features = [];
+    syntaxTree(context.state).cursor().iterate(node => {
+        if (node.name === "Feature") {
+            let featureText = context.state.doc.sliceString(node.from, node.to);
+            features.push(featureText);
+        }
+    });
+    let uniqueFeatures = [...new Set(features)];
+    if (uniqueFeatures.length > 0) {
+        return {
+            from: word.from,
+            options: uniqueFeatures.map(f => ({ label: f, type: "keyword" })),
+            validFor: /^[\w]*$/
+        };
+    }
+    let nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
+    if (nodeBefore.name === "ConstraintItem") {
+        // then suggest | and =>
+        return {
+            from: context.pos,
+            options: [
+                { label: " |", type: "operator" },
+                { label: " =>", type: "operator" },
+                { label: " &", type: "operator" }
+            ],
+            validFor: /^[|=>&]*$/ // valid for
+        };
+    }
+    return null;
+}
+
+
 
 
 //using unused predefined token to create a color template for the language
@@ -111,7 +146,7 @@ let parserWithMetadata = parser.configure({
         styleTags({
             //keyword colour
             AbstractItem: t.keyword,
-            Feature: t.keyword,
+            ExtendedFeature: t.keyword,
             Attribute: t.keyword,
             FeatureModel: t.keyword,
             //tagName colour
@@ -125,6 +160,7 @@ let parserWithMetadata = parser.configure({
             //labelName colour not defined
             Brackets: t.bracket,
             Operation: t.bracket,
+            Type: t.bracket,
             //typeName colour
             ConstraintItem: t.typeName,
             //other
@@ -148,6 +184,7 @@ export const customLinter = linter(view => {
         "TypeFeature",
         "Type",
         "Feature",
+        "ExtendedFeature",
         "Cardinality",
         "Min",
         "Max",
@@ -183,7 +220,6 @@ export const customLinter = linter(view => {
                 }]
             });
         }
-
         // cardinality [Min..Max]
         if (node.name === "Cardinality") {
             const text = view.state.doc.sliceString(node.from, node.to);
@@ -209,7 +245,6 @@ export const customLinter = linter(view => {
     return diagnostics;
 });
 
-
 //creating a language with the extended parser
 //integration. Could be fused with the export
 const myLanguage = LRLanguage.define({
@@ -224,5 +259,5 @@ export const UVLLanguageSupport = new LanguageSupport(myLanguage, [
 
 //advanced autocompletion
 export const autocompleteExtension = autocompletion({
-    override: [customAutocomplete, standardAutocomplete, constraintAutocomplete]
+    override: [ standardAutocomplete, constraintAutocomplete2]
 });
