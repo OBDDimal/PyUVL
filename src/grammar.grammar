@@ -1,6 +1,6 @@
-//! ToDo refacotoring required
+//! ToDo refactoring required
 
-@precedence { first @left, last @left, card, att}
+@precedence { first @left, last @left}
 
 @top Tree { featuresSection constraintsSection? }
 
@@ -25,9 +25,10 @@ avg { "avg" "(" Attribute ")"}
 Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
 //! Arithmetic block End
 
-Feature { !last (identifier | string) Cardinality? AttributeItem?}
+Feature { (identifier | string) ReqExp?}
+ExtendedFeature {!last Feature Cardinality? AttributeItem?}
 Type { "Integer" | "String" | "Real" | "Boolean"}
-TypeFeature { Type Feature }
+TypeFeature { Type ExtendedFeature }
 
 //!check if ReqExp is still required after Level 3
 ReqExp { !last (identifier | string) }
@@ -53,7 +54,7 @@ ConstraintSign {
 }
 
 ConstraintsItem {
-  Neg? Feature
+  Neg? (identifier | string)
 }
 Neg {
   "!"
@@ -80,7 +81,7 @@ Constraints {
 //!block
 
 stateBlock { indent  (State lineEnd featureBlock)+ (dedent | eof) }
-featureBlock { indent ((TypeFeature | Feature) lineEnd | AbstractFeature)+ (dedent | eof) }
+featureBlock { indent ((TypeFeature | ExtendedFeature) lineEnd | AbstractFeature)+ (dedent | eof) }
 constraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
 
 //!skip
