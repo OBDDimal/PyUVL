@@ -9,7 +9,14 @@ import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language'
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
 import { linter } from "@codemirror/lint";
-import {AbstractItem, AttributeItem, ConstraintSign, ExtendedFeature, Operator} from "./parser.terms.mjs";
+import {
+    AbstractItem,
+    AttributeItem,
+    ConstraintSign,
+    ConstraintsItem,
+    ExtendedFeature,
+    Operator
+} from "./parser.terms.mjs";
 
 //autocompletion for FeatureNames
 //ToDO remove in next patch
@@ -53,7 +60,8 @@ function standardAutocomplete(context) {
     };
 }
 //constraints autocompletion
-function constraintAutocomplete(context) {
+//ToDO outdated: remove or change in next patch
+function constraintAutocomplete2(context) {
     let word = context.matchBefore(/\w*/);
     if (word.from === word.to && !context.explicit) return null;
     let nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
@@ -72,7 +80,7 @@ function constraintAutocomplete(context) {
 //no suggestion
     return null;
 }
-function constraintAutocomplete2(context) {
+function constraintAutocomplete(context) {
     let word = context.matchBefore(/\w*/);
     if (word.from === word.to && !context.explicit) return null;
 
@@ -146,6 +154,8 @@ let parserWithMetadata = parser.configure({
         styleTags({
             //keyword colour
             AbstractItem: t.keyword,
+            Feature: t.keyword,
+            ConstraintsItem: t.keyword,
             ExtendedFeature: t.keyword,
             Attribute: t.keyword,
             FeatureModel: t.keyword,
@@ -259,5 +269,5 @@ export const UVLLanguageSupport = new LanguageSupport(myLanguage, [
 
 //advanced autocompletion
 export const autocompleteExtension = autocompletion({
-    override: [ standardAutocomplete, constraintAutocomplete2]
+    override: [ standardAutocomplete, constraintAutocomplete]
 });
