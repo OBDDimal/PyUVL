@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "build": "npm run parser && rollup -c",
-    "dev": "rollup -c -w",
+    "dev": "npm run parser && rollup -c -w",
     "parser": "lezer-generator src/grammar.grammar -o src/parser.mjs"
   },
   "dependencies": {

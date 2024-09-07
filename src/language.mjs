@@ -9,14 +9,6 @@ import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language'
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
 import { linter } from "@codemirror/lint";
-import {
-    AbstractItem,
-    AttributeItem,
-    ConstraintSign,
-    ConstraintsItem,
-    ExtendedFeature,
-    Operator
-} from "./parser.terms.mjs";
 
 //autocompletion for FeatureNames
 //ToDO remove in next patch
