@@ -56,6 +56,7 @@ constraints
     UndirectedCall => !(FIFO | ShortestPath)
     sum(Power) > 120 => Large
     sum(Power) + 120 => Power
+    len(Power) + 100 => Large
 
 `,
       extensions: [

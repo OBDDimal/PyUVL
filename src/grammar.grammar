@@ -19,7 +19,8 @@ Attribute { identifier | string }
 AttributeItem {!first "{" list<AttributeSelection> "}"}
 AttributeSelection { (Attribute AttributeValue) | (Attribute "'" identifier "'")}
 AttributeValue { number }
-Operation { sum | avg }
+Operation { sum | avg | lenExpr}
+lenExpr {"len" "(" Attribute ")" }
 sum {"sum" "(" Attribute ")"}
 avg { "avg" "(" Attribute ")"}
 Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
@@ -50,7 +51,7 @@ constraintsSection {
 }
 
 ConstraintSign {
-  "|" | "=>" | "&"
+  "|" | "=>" | "&" | "=="
 }
 
 ConstraintsItem {
@@ -59,14 +60,7 @@ ConstraintsItem {
 Neg {
   "!"
 }
-Brackets {
- Neg? OpenBracket Constraints CloseBracket
-}
-OpenBracket {
-  "("
-}
-CloseBracket {
-  ")"
+Brackets { "(" Constraints ")"
 }
 
 Constraints {
@@ -75,7 +69,7 @@ Constraints {
   (!first ConstraintsItem ConstraintSign Constraints) |
   (!first Constraints ConstraintSign ConstraintsItem) |
   (!first Constraints ConstraintSign Constraints) |
-  (Brackets)
+  (Neg? Brackets)
 }
 
 //!block
@@ -111,7 +105,7 @@ lineEnd { newline | eof }
 //!tokens
 
 @tokens {
-  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean", number, identifier}
+  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", number, identifier}
   spaces { $[ \t]+ }
   newline { "\n" }
   eof { @eof }

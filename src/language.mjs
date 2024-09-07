@@ -101,15 +101,19 @@ function constraintAutocomplete(context) {
     }
     let nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
     if (nodeBefore.name === "ConstraintItem") {
-        // then suggest | and =>
+        //then suggest | and =>
+        //ToDo fix
         return {
             from: context.pos,
             options: [
                 { label: " |", type: "operator" },
                 { label: " =>", type: "operator" },
-                { label: " &", type: "operator" }
+                { label: " &", type: "operator" },
+                { label: "sum()", type: "function" },
+                { label: "len()", type: "function" },
+                { label: "avg()", type: "function" }
             ],
-            validFor: /^[|=>&]*$/ // valid for
+            validFor: /^[|=>&sumlenavg()]*$/ // valid for
         };
     }
     return null;
@@ -174,9 +178,6 @@ let parserWithMetadata = parser.configure({
             //typeName colour
             ConstraintItem: t.typeName,
             //other
-            OpenBracket: t.bracket,
-            CloseBracket: t.bracket,
-            //rest
             LineComment: t.lineComment,
         }),
     ]
@@ -212,8 +213,7 @@ export const customLinter = linter(view => {
         "ConstraintsItem",
         "Neg",
         "Brackets",
-        "OpenBracket",
-        "CloseBracket"
+        "LenExpr"
     ]
 
     syntaxTree(view.state).cursor().iterate(node => {
