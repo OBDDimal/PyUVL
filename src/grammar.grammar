@@ -1,43 +1,25 @@
-//! ToDo refacotoring required
-
 @precedence { first @left, last @left}
 
 @top Tree { featuresSection constraintsSection? }
 
-featuresSection {identifier lineEnd featureBlock }
+featuresSection {identifier lineEnd FeatureBlock }
 
-AbstractItem { !first Feature abstract }
-
-//!Cardinality block (Level 1)
+StateFeature { ExtendedFeature lineEnd StateBlock }
+Feature { (identifier | string) }
+ExtendedFeature {ReqExp? Type? Feature ReqExp? Cardinality? AttributeItem?}
+Type { "Integer" | "String" | "Real" | "Boolean"}
+AttributeItem {!first "{" list<AttributeSelection> "}"}
 Cardinality {!last "cardinality " "[" Min ".." Max "]"}
 Min {number}
 Max {number}
-//!Cardinality block End
 
-//! Arithmetic block (Level 2)
-Attribute { identifier | string }
-AttributeItem {!first "{" list<AttributeSelection> "}"}
-AttributeSelection { (Attribute AttributeValue) | (Attribute "'" identifier "'")}
-AttributeValue { number }
-Operation { sum | avg | lenExpr}
-lenExpr {"len" "(" Attribute ")" }
-sum {"sum" "(" Attribute ")"}
-avg { "avg" "(" Attribute ")"}
-Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
-//! Arithmetic block End
+AttributeSelection { Key Value? }
+Key { identifier | string }
+Value { number | string | "'" identifier "'"}
 
-Feature { (identifier | string) ReqExp?}
-ExtendedFeature {!last Feature Cardinality? AttributeItem?}
-Type { "Integer" | "String" | "Real" | "Boolean"}
-TypeFeature { Type ExtendedFeature }
-
-//!check if ReqExp is still required after Level 3
+//!utilty
 ReqExp { !last (identifier | string) }
 list<item> { item ("," item)* }
-
-AbstractFeature { !last AbstractItem lineEnd stateBlock+}
-
-abstract {"{abstract}"}
 
 State{
   ("mandatory"
@@ -46,25 +28,17 @@ State{
    | "or")
 }
 
-constraintsSection {
-    "constraints" lineEnd constraintsBlock+
-}
+//!constraints section
+constraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
-ConstraintSign {
-  "|" | "=>" | "&" | "=="
-}
-
-ConstraintsItem {
-  Neg? (identifier | string)
-}
-Neg {
-  "!"
-}
-Brackets { "(" Constraints ")"
-}
+ConstraintSign { "|" | "=>" | "&" | "==" }
+ConstraintsItem { Neg? (identifier | string) }
+Neg { "!" }
+Brackets { "(" Constraints ")" }
+Number { number }
 
 Constraints {
-  (!last Operation Operator number (ConstraintSign ConstraintsItem)?) |
+  (!last Operation Operator Number (ConstraintSign ConstraintsItem)?) |
   (!last ConstraintsItem ConstraintSign ConstraintsItem) |
   (!first ConstraintsItem ConstraintSign Constraints) |
   (!first Constraints ConstraintSign ConstraintsItem) |
@@ -72,14 +46,19 @@ Constraints {
   (Neg? Brackets)
 }
 
-//!block
+Operation { sum | avg | lenExpr}
+lenExpr {"len" "(" Attribute ")" }
+sum {"sum" "(" Attribute ")"}
+avg { "avg" "(" Attribute ")"}
+Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
+Attribute { identifier | string }
 
-stateBlock { indent  (State lineEnd featureBlock)+ (dedent | eof) }
-featureBlock { indent ((TypeFeature | ExtendedFeature) lineEnd | AbstractFeature)+ (dedent | eof) }
-constraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
+//!block
+StateBlock { indent  (State lineEnd FeatureBlock)+ (dedent | eof) }
+FeatureBlock { indent (ExtendedFeature lineEnd | StateFeature)+  (dedent | eof) }
+ConstraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
 
 //!skip
-
 @skip {
   spaces |
   Comment |
@@ -87,23 +66,18 @@ constraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
 }
 
 //!lineEnd
-
 lineEnd { newline | eof }
 
 //!context
-
 @context trackIndent from "./tokens.js"
 
 //!externalTokens
-
 @external tokens indentation from "./tokens.js" {
   indent
   dedent
   blankLineStart
 }
-
 //!tokens
-
 @tokens {
   @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", number, identifier}
   spaces { $[ \t]+ }
@@ -113,4 +87,4 @@ lineEnd { newline | eof }
   string { '"' (!["\\] | "\\" _)* '"' }
   identifier { $[a-zA-Z0-9_]+ }
   number { $[0-9]+ }
-}
+}	
