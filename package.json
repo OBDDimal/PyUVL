@@ -1,0 +1,16 @@
+{
+  "name": "uvl_editor",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "npm run parser && rollup -c",
+    "dev": "npm run parser && rollup -c -w",
+    "parser": "lezer-generator src/grammar.grammar -o src/parser.mjs"
+  },
+  "dependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "codemirror": "^6.0.1",
+    "lit": "^3.2.0",
+    "rollup": "^4.21.0",
+    "@lezer/generator": "^1.7.1"
+  }
+}
