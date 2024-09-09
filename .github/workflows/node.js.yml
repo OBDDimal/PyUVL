@@ -8,7 +8,7 @@ on:
   push:
     branches: [ "*" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "nightly", "stable", "main" ]
 
 jobs:
   build:
@@ -39,6 +39,9 @@ jobs:
   deploy:
     # Add a dependency to the build job
     needs: build
+
+    #
+    branches: ["nightly", "stable"]
 
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
