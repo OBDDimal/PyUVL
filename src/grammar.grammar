@@ -7,7 +7,7 @@ Root { "features" }
 
 StateFeature { ExtendedFeature lineEnd StateBlock }
 Feature { (identifier | string) }
-ExtendedFeature {ReqExp? Type? Feature ReqExp? Cardinality? AttributeItem?}
+ExtendedFeature {Type? Feature ReqExp? Cardinality? AttributeItem?}
 Type { "Integer" | "String" | "Real" | "Boolean"}
 AttributeItem {!first "{" list<AttributeSelection> "}"}
 Cardinality {!last "cardinality " "[" Min ".." Max "]"}

@@ -24,9 +24,9 @@ function customAutocomplete(context) {
     let options = [...tokens]
         .filter(token => !blacklist.has(token))
         .map(token => ({
-        label: token,
-        type: "keyword"
-    }));
+            label: token,
+            type: "keyword"
+        }));
 
     return {
         from: word.from,
@@ -191,23 +191,11 @@ export const customLinter = linter(view => {
         "Brackets",
         "Signs",
         "OpenBracket",
-        "CloseBracket"
+        "CloseBracket",
+        "Root"
     ]
     syntaxTree(view.state).cursor().iterate(node => {
-        //blacklist
-        if (!list.includes(node.name) || node.name === "RegExp") {
-            diagnostics.push({
-                from: node.from,
-                to: node.to,
-                severity: "error",
-                message: "Syntax Error",
-                actions: [{
-                    name: "Remove",
-                    apply(view, from, to) { view.dispatch({ changes: { from, to } }) }
-                }]
-            });
-        }
-        // cardinality [Min..Max]
+        //cardinality [Min..Max]
         if (node.name === "Cardinality") {
             const text = view.state.doc.sliceString(node.from, node.to);
             const match = text.match(/\[\s*(\d+)\s*\.\.\s*(\d+)\s*\]/);
@@ -227,23 +215,46 @@ export const customLinter = linter(view => {
                 }
             }
         }
-        let featureText = view.state.doc.sliceString(node.from, node.to);
-        if (node.name === "Feature") {
-            const list = ["features", "constraints"];
-            if (list.includes(featureText)) {
-                diagnostics.push({
-                    from: node.from,
-                    to: node.to,
-                    severity: "error",
-                    message: `(${featureText}) is not allowed as a feature name`,
-                    actions: [{
-                        name: "Remove",
-                        apply(view, from, to) { view.dispatch({ changes: { from, to } }) }
-                    }]
+        if (node.name === "ExtendedFeature") {
+            let featureNode = node.node.getChild("Feature");
+            let attributeNode = node.node.getChild("AttributeItem");
+            if (featureNode) {
+                let featureText = view.state.doc.sliceString(featureNode.from, featureNode.to);
+                let keywords = ["features", "constraints"];
+                //"constraints" is still buggy
+                if (keywords.includes(featureText)) {
+                    diagnostics.push({
+                        from: featureNode.from,
+                        to: featureNode.to,
+                        severity: "error",
+                        message: `The text "${featureText}" is not allowed in the Feature node`,
+                        actions: [{
+                            name: "Remove 'features'",
+                            apply(view, from, to) { view.dispatch({changes: {from, to, insert: ''}}); }
+                        }]
+                    });
+                }
+            }
+            if (attributeNode) {
+                attributeNode.getChildren("AttributeSelection").forEach(selectionNode => {
+                    let valueNode = selectionNode.getChild("Value");
+
+                    if (valueNode) {
+                        let valueText = view.state.doc.sliceString(valueNode.from, valueNode.to);
+                        if (!/^\d+$/.test(valueText) && !/^["].*["]$/.test(valueText) && !/^'[a-zA-Z_]\w*'$/.test(valueText)) {
+                            diagnostics.push({
+                                from: valueNode.from,
+                                to: valueNode.to,
+                                severity: "error",
+                                message: "Value must be a number, a string in double quotes, or an identifier in single quotes."
+                            });
+                        }
+                    }
                 });
             }
         }
-        if (node.name === "Constraints") {
+        //brackets not matching
+        else if (node.name === "Constraints") {
             let openBrackets = 0;
             let closeBrackets = 0;
 
@@ -262,6 +273,19 @@ export const customLinter = linter(view => {
                     message: "Too many brackets in constraints",
                 });
             }
+        }
+        //blacklist and unrecognized
+        else if (!list.includes(node.name)) {
+            diagnostics.push({
+                from: node.from,
+                to: node.to,
+                severity: "error",
+                message: "Features have to be connected with \" or ' ",
+                actions: [{
+                    name: "Remove",
+                    apply(view, from, to) { view.dispatch({ changes: { from, to } }) }
+                }]
+            });
         }
     });
 
