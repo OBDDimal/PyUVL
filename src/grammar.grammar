@@ -35,7 +35,9 @@ constraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" }
 ConstraintsItem { Neg? (identifier | string) }
 Neg { "!" }
-Brackets { "(" Constraints ")" }
+Brackets { OpenBracket Constraints CloseBracket }
+OpenBracket { "(" }
+CloseBracket { ")" }
 Number { number }
 
 Constraints {

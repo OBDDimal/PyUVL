@@ -9,7 +9,7 @@ import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language'
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
 import { linter } from "@codemirror/lint";
-import {Signs} from "./parser.terms.mjs";
+import {OpenBracket, Signs} from "./parser.terms.mjs";
 
 //autocompletion for FeatureNames
 //ToDO remove in next patch
@@ -189,7 +189,9 @@ export const customLinter = linter(view => {
         "ConstraintsItem",
         "Neg",
         "Brackets",
-        "Signs"
+        "Signs",
+        "OpenBracket",
+        "CloseBracket"
     ]
     syntaxTree(view.state).cursor().iterate(node => {
         //blacklist
@@ -225,8 +227,8 @@ export const customLinter = linter(view => {
                 }
             }
         }
+        let featureText = view.state.doc.sliceString(node.from, node.to);
         if (node.name === "Feature") {
-            let featureText = view.state.doc.sliceString(node.from, node.to);
             const list = ["features", "constraints"];
             if (list.includes(featureText)) {
                 diagnostics.push({
@@ -238,6 +240,26 @@ export const customLinter = linter(view => {
                         name: "Remove",
                         apply(view, from, to) { view.dispatch({ changes: { from, to } }) }
                     }]
+                });
+            }
+        }
+        if (node.name === "Constraints") {
+            let openBrackets = 0;
+            let closeBrackets = 0;
+
+            node.node.cursor().iterate(innerNode => {
+                if (innerNode.name === "OpenBracket") {
+                    openBrackets++;
+                } else if (innerNode.name === "CloseBracket") {
+                    closeBrackets++;
+                }
+            });
+            if (openBrackets > 1 || closeBrackets > 1) {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: "Too many brackets in constraints",
                 });
             }
         }
