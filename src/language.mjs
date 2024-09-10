@@ -9,12 +9,13 @@ import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language'
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
 import { linter } from "@codemirror/lint";
+import {Signs} from "./parser.terms.mjs";
 
 //autocompletion for FeatureNames
 //ToDO remove in next patch
 function customAutocomplete(context) {
     let word = context.matchBefore(/\w*/);
-    const blacklist = new Set(["mandatory", "or", "optional", "alternative", "{abstract}"]);
+    const blacklist = new Set(["mandatory", "or", "optional", "alternative"]);
     if (word.from === word.to && !context.explicit)
         return null;
     let text = context.state.doc.toString();
@@ -34,7 +35,7 @@ function customAutocomplete(context) {
 }
 //autocompletion for keywords with a line break
 function standardAutocomplete(context) {
-    const keywords = ["features", "{abstract}", "mandatory", "optional", "alternative", "or", "constraints"];
+    const keywords = ["features", "mandatory", "optional", "alternative", "or", "constraints"];
     let word = context.matchBefore(/\w*/);
     if (word.from === word.to && !context.explicit)
         return null;
@@ -120,28 +121,7 @@ const customHighlightStyle = HighlightStyle.define([
     { tag: t.typeName, color: "#0022ff"},
     { tag: t.tagName, color: "#0022ff", fontWeight: "bold"},
     { tag: t.operator, color: "#404080"},
-    { tag: t.bracket, color: "#ae2eae", fontWeight: "bold"},
-    // up old down new
-/*
-//Current theme
-    { tag: t.labelName, color: "#60B0FF"},
-    { tag: t.labelName, color: "#B0FFF0"},
-    { tag: t.labelName, color: "#60B0FF"},
-    { tag: t.labelName, color: "#8080A0"},
-    { tag: t.labelName, color: "#7090B0"},
-    { tag: t.labelName, color: "#999999"}, //undefined
-    { tag: t.labelName, color: "#404080"}, //comment
-    { tag: t.labelName, color: "#60B0FF"},
-    { tag: t.labelName, color: "#A0A0FF"}, //operator
-    { tag: t.labelName, color: "#008080"},
-    { tag: t.labelName, color: "#A0A0FF"},
-    { tag: t.labelName, color: "#80A0FF"},
-    { tag: t.labelName, color: "#70E080"},
-    { tag: t.labelName, color: "#50A0A0"},
-    { tag: t.labelName, color: "#009090"},
-    { tag: t.labelName, color: "#B0FFF0"},
-    { tag: t.labelName, color: "#D0D0FF"},
- */
+    { tag: t.bracket, color: "#ae2eae", fontWeight: "bold"}
 ]);
 
 //connecting Token form parser to the color template. Folding and all the other logic is designed to be here
@@ -208,17 +188,17 @@ export const customLinter = linter(view => {
         "ConstraintSign",
         "ConstraintsItem",
         "Neg",
-        "Brackets"
+        "Brackets",
+        "Signs"
     ]
-
     syntaxTree(view.state).cursor().iterate(node => {
         //blacklist
-        if (!list.includes(node.name) || node.node === "RegExp") {
+        if (!list.includes(node.name) || node.name === "RegExp") {
             diagnostics.push({
                 from: node.from,
                 to: node.to,
                 severity: "error",
-                message: "Regular expressions are FORBIDDEN",
+                message: "Syntax Error",
                 actions: [{
                     name: "Remove",
                     apply(view, from, to) { view.dispatch({ changes: { from, to } }) }

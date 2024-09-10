@@ -52,7 +52,7 @@ Operation { sum | avg | lenExpr}
 lenExpr {"len" "(" Key ")" }
 sum {"sum" "(" Key ")"}
 avg { "avg" "(" Key ")"}
-Operator { "+" | "-" | "*" | "/" }
+Operator { "+" | "-" | "*" | "/" | ">" | "<"}
 Signs { "<" | ">" | "=="}
 
 //!block
