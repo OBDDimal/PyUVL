@@ -2,7 +2,8 @@
 
 @top Tree { featuresSection constraintsSection? }
 
-featuresSection {identifier lineEnd FeatureBlock }
+featuresSection { Root lineEnd FeatureBlock }
+Root { "features" }
 
 StateFeature { ExtendedFeature lineEnd StateBlock }
 Feature { (identifier | string) }
@@ -17,7 +18,7 @@ AttributeSelection { Key Value? }
 Key { identifier | string }
 Value { number | string | "'" identifier "'"}
 
-//!utilty
+//!utility
 ReqExp { !last (identifier | string) }
 list<item> { item ("," item)* }
 
@@ -31,7 +32,7 @@ State{
 //!constraints section
 constraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
-ConstraintSign { "|" | "=>" | "&" | "==" }
+ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" }
 ConstraintsItem { Neg? (identifier | string) }
 Neg { "!" }
 Brackets { "(" Constraints ")" }
@@ -43,15 +44,16 @@ Constraints {
   (!first ConstraintsItem ConstraintSign Constraints) |
   (!first Constraints ConstraintSign ConstraintsItem) |
   (!first Constraints ConstraintSign Constraints) |
+  (!first ConstraintsItem Operator ConstraintsItem Signs ConstraintsItem) |
   (Neg? Brackets)
 }
 
 Operation { sum | avg | lenExpr}
-lenExpr {"len" "(" Attribute ")" }
-sum {"sum" "(" Attribute ")"}
-avg { "avg" "(" Attribute ")"}
-Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
-Attribute { identifier | string }
+lenExpr {"len" "(" Key ")" }
+sum {"sum" "(" Key ")"}
+avg { "avg" "(" Key ")"}
+Operator { "+" | "-" | "*" | "/" }
+Signs { "<" | ">" | "=="}
 
 //!block
 StateBlock { indent  (State lineEnd FeatureBlock)+ (dedent | eof) }
