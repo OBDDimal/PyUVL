@@ -35,7 +35,7 @@ function customAutocomplete(context) {
 }
 //autocompletion for keywords with a line break
 function standardAutocomplete(context) {
-    const keywords = ["features", "mandatory", "optional", "alternative", "or", "constraints"];
+    const keywords = ["mandatory", "optional", "alternative", "or", "constraints"];
     let word = context.matchBefore(/\w*/);
     if (word.from === word.to && !context.explicit)
         return null;
@@ -223,6 +223,22 @@ export const customLinter = linter(view => {
                         message: `Invalid cardinality: Min (${min}) must be less than Max (${max})`,
                     });
                 }
+            }
+        }
+        if (node.name === "Feature") {
+            let featureText = view.state.doc.sliceString(node.from, node.to);
+            const list = ["features", "constraints"];
+            if (list.includes(featureText)) {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: `(${featureText}) is not allowed as a feature name`,
+                    actions: [{
+                        name: "Remove",
+                        apply(view, from, to) { view.dispatch({ changes: { from, to } }) }
+                    }]
+                });
             }
         }
     });
