@@ -1,8 +1,10 @@
 import { LitElement, html } from 'lit';
 import { EditorView, basicSetup } from 'codemirror';
+import {defaultKeymap} from "@codemirror/commands"
 import { EditorState } from '@codemirror/state';
 import {UVLLanguageSupport, autocompleteExtension, customLinter} from './language.mjs';
 import {lintGutter} from "@codemirror/lint";
+import {keymap} from "@codemirror/view"
 
 class CodeMirrorEditor extends LitElement {
 
@@ -65,6 +67,7 @@ constraints
           UVLLanguageSupport,
           customLinter,
           lintGutter(),
+          keymap.of(defaultKeymap)
       ],
     });
 
