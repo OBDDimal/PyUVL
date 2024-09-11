@@ -25,8 +25,14 @@ function getTestFiles(dir) {
 }
 
 const testFiles = getTestFiles(caseDir);
+
+if (testFiles.length === 0) {
+    console.error("No .uvl test files found!");
+    process.exit(1);
+}
+
 testFiles.forEach(file => {
-    const name = path.relative(caseDir, file).replace(/\.txt$/, '');
+    const name = path.relative(caseDir, file).replace(/\.uvl$/, '');
     describe(name, () => {
         const content = fs.readFileSync(file, "utf8");
         const tests = fileTests(content, file);
