@@ -7,7 +7,7 @@ importSection { "imports" lineEnd ImportBlock}
 featuresSection { Root lineEnd FeatureBlock }
 Root { "features" }
 
-StateFeature { !last ExtendedFeature lineEnd (StateBlock | CounterBlock) }
+StateFeature { !last ExtendedFeature lineEnd StateBlock }
 ImportFeature { ImportName ("."  Specifier)+}
 ImportName { (identifier | string) }
 Specifier { (identifier | string) }
@@ -33,7 +33,8 @@ State{
   ("mandatory"
    | "optional"
    | "alternative"
-   | "or")
+   | "or"
+   | Counter)
 }
 
 //!constraints section
@@ -66,9 +67,7 @@ Signs { "<" | ">" | "=="}
 
 //!block
 StateBlock { indent  (State lineEnd FeatureBlock)+ (dedent | eof) }
-CounterBlock { indent  (Counter lineEnd FeatureListBlock)+ (dedent | eof) }
 FeatureBlock { indent (ExtendedFeature lineEnd | StateFeature)+  (dedent | eof) }
-FeatureListBlock { indent (ExtendedFeature lineEnd)+ (dedent | eof) }
 ConstraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
 ImportBlock { indent (Feature lineEnd)+  (dedent | eof) }
 
