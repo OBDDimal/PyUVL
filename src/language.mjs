@@ -159,6 +159,7 @@ let parserWithMetadata = parser.configure({
 //error highlighting as a extension to the language support
 export const customLinter = linter(view => {
     let diagnostics = [];
+    let declaredFeatures = new Set();
     const list = [
         "indent",
         "dedent",
@@ -194,6 +195,15 @@ export const customLinter = linter(view => {
         "CloseBracket",
         "Root"
     ]
+
+    syntaxTree(view.state).cursor().iterate(node => {
+        if (node.name === "Feature") {
+            // Extrahiere den Text des Feature-Knotens
+            let featureText = view.state.doc.sliceString(node.from, node.to).trim();
+            declaredFeatures.add(featureText);
+        }
+    });
+
     syntaxTree(view.state).cursor().iterate(node => {
         //cardinality [Min..Max]
         if (node.name === "Cardinality") {
@@ -255,24 +265,48 @@ export const customLinter = linter(view => {
         }
         //brackets not matching
         else if (node.name === "Constraints") {
-            let openBrackets = 0;
-            let closeBrackets = 0;
+            let constraintText = view.state.doc.sliceString(node.from, node.to);
 
-            node.node.cursor().iterate(innerNode => {
-                if (innerNode.name === "OpenBracket") {
-                    openBrackets++;
-                } else if (innerNode.name === "CloseBracket") {
-                    closeBrackets++;
-                }
-            });
+            let openBrackets = (constraintText.match(/\(/g) || []).length;
+            let closeBrackets = (constraintText.match(/\)/g) || []).length;
+
             if (openBrackets > 1 || closeBrackets > 1) {
                 diagnostics.push({
                     from: node.from,
                     to: node.to,
                     severity: "error",
-                    message: "Too many brackets in constraints",
+                    message: "A constraint can only have one pair of parentheses."
                 });
             }
+            node.node.getChildren("ConstraintsItem").forEach(constraintItemNode => {
+                let constraintItemText = view.state.doc.sliceString(constraintItemNode.from, constraintItemNode.to);
+
+                //remove ! from Feature
+                let isNegated = constraintItemText.startsWith("!");
+                if (isNegated) {
+                    constraintItemText = constraintItemText.slice(1).trim();
+                }
+                if (!declaredFeatures.has(constraintItemText)) {
+                    diagnostics.push({
+                        from: constraintItemNode.from,
+                        to: constraintItemNode.to,
+                        severity: "error",
+                        message: `"${constraintItemText}" is not a declared feature.`
+                    });
+                }
+
+                let before = constraintItemText.slice(0, constraintItemNode.from - node.from).trim();
+                let after = constraintItemText.slice(constraintItemNode.to - node.from).trim();
+
+                if (before.endsWith("(") || after.startsWith(")")) {
+                    diagnostics.push({
+                        from: constraintItemNode.from,
+                        to: constraintItemNode.to,
+                        severity: "error",
+                        message: "Constraint items should not be enclosed by parentheses."
+                    });
+                }
+            });
         }
         //blacklist and unrecognized
         else if (!list.includes(node.name)) {
