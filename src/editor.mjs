@@ -19,7 +19,8 @@ class CodeMirrorEditor extends LitElement {
 
   initializeEditor() {
     const startState = EditorState.create({
-      doc: `features
+      doc: `
+  features
     Elevator {abstract}
         mandatory
             Behavior {abstract}
@@ -36,6 +37,7 @@ class CodeMirrorEditor extends LitElement {
                             String RushHour
                             Integer FloorPriority
                             Real PersonPriority
+                            Sabbath
         optional
             VoiceOutput
             CallButtons {abstract}
@@ -59,7 +61,6 @@ constraints
     sum(Power) > 120 => Large
     sum(Power) + 120 => Power
     len(Power) + 100 => Large
-
 `,
       extensions: [
           basicSetup,
