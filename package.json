@@ -4,7 +4,12 @@
   "scripts": {
     "build": "npm run parser && rollup -c",
     "dev": "npm run parser && rollup -c -w",
-    "parser": "lezer-generator src/grammar.grammar -o src/parser.mjs"
+    "parser": "lezer-generator src/grammar.grammar -o src/parser.mjs",
+    "test": "mocha tests/tests.js"
+  },
+  "devDependencies": {
+    "@lezer/generator": "^1.0.0",
+    "mocha": "^10.7.3"
   },
   "dependencies": {
     "@lezer/generator": "^1.7.1",
