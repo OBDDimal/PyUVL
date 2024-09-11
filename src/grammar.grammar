@@ -1,22 +1,29 @@
 @precedence { first @left, last @left}
 
-@top Tree { featuresSection constraintsSection? }
+@top Tree { importSection? featuresSection constraintsSection? }
+
+importSection { "imports" lineEnd ImportBlock}
 
 featuresSection { Root lineEnd FeatureBlock }
 Root { "features" }
 
-StateFeature { ExtendedFeature lineEnd StateBlock }
+StateFeature { !last ExtendedFeature lineEnd (StateBlock | CounterBlock) }
+ImportFeature { ImportName ("."  Specifier)+}
+ImportName { (identifier | string) }
+Specifier { (identifier | string) }
 Feature { (identifier | string) }
-ExtendedFeature {Type? Feature ReqExp? Cardinality? AttributeItem?}
+ExtendedFeature {!first Type? (Feature | ImportFeature) ReqExp? Cardinality? AttributeItem? }
 Type { "Integer" | "String" | "Real" | "Boolean"}
 AttributeItem {!first "{" list<AttributeSelection> "}"}
 Cardinality {!last "cardinality " "[" Min ".." Max "]"}
+Counter { !first "[" Min ".." Max "]" }
 Min {number}
 Max {number}
 
 AttributeSelection { Key Value? }
 Key { identifier | string }
-Value { number | string | "'" identifier "'"}
+Value { number | string | "'" identifier "'" | boolean }
+boolean { "true" | "false" }
 
 //!utility
 ReqExp { !last (identifier | string) }
@@ -33,9 +40,9 @@ State{
 constraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
 ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" }
-ConstraintsItem { Neg? (identifier | string) }
+ConstraintsItem { Neg? ((identifier | string) | ImportFeature) }
 Neg { "!" }
-Brackets { OpenBracket Constraints CloseBracket }
+Brackets { !first OpenBracket Constraints CloseBracket }
 OpenBracket { "(" }
 CloseBracket { ")" }
 Number { number }
@@ -59,8 +66,11 @@ Signs { "<" | ">" | "=="}
 
 //!block
 StateBlock { indent  (State lineEnd FeatureBlock)+ (dedent | eof) }
+CounterBlock { indent  (Counter lineEnd FeatureListBlock)+ (dedent | eof) }
 FeatureBlock { indent (ExtendedFeature lineEnd | StateFeature)+  (dedent | eof) }
+FeatureListBlock { indent (ExtendedFeature lineEnd)+ (dedent | eof) }
 ConstraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
+ImportBlock { indent (Feature lineEnd)+  (dedent | eof) }
 
 //!skip
 @skip {
@@ -73,10 +83,10 @@ ConstraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
 lineEnd { newline | eof }
 
 //!context
-@context trackIndent from "./tokens.mjs"
+@context trackIndent from "./tokens.js"
 
 //!externalTokens
-@external tokens indentation from "./tokens.mjs" {
+@external tokens indentation from "./tokens.js" {
   indent
   dedent
   blankLineStart
