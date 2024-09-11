@@ -5,6 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 import {fileURLToPath} from "url";
 
+//FIXME common bug. Probably a folder Problem
 const caseDir = path.dirname(fileURLToPath(import.meta.url));
 function getTestFiles(dir) {
     let results = [];
@@ -20,7 +21,6 @@ function getTestFiles(dir) {
             results.push(filePath);
         }
     });
-
     return results;
 }
 
