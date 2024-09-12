@@ -19,8 +19,7 @@ class CodeMirrorEditor extends LitElement {
 
   initializeEditor() {
     const startState = EditorState.create({
-      doc: `
-  features
+      doc: `features
     Elevator {abstract}
         mandatory
             Behavior {abstract}

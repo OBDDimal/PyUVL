@@ -1,8 +1,14 @@
-@precedence { first @left, last @left}
+@precedence { first @left, last @left, only @left}
 
-@top Tree { importSection? featuresSection constraintsSection? }
+@top Tree { includeSection? importSection? featuresSection constraintsSection? }
 
 importSection { "imports" lineEnd ImportBlock}
+includeSection { "include" lineEnd IncludeBlock}
+include {
+  "Boolean" |
+  "Arithmetic" |
+  "Type"
+}
 
 featuresSection { Root lineEnd FeatureBlock }
 Root { "features" }
@@ -21,8 +27,8 @@ Min {number}
 Max {number}
 
 AttributeSelection { Key Value? }
-Key { identifier | string }
-Value { number | string | "'" identifier "'" | boolean | real}
+Key { identifier | string | "'" identifier "'" }
+Value { ("-"? number) | string | "'" identifier+ "'" | boolean | ("-"? real) | AttributeItem}
 boolean { "true" | "false" }
 
 //!utility
@@ -40,38 +46,43 @@ State{
 //!constraints section
 constraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
-ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" }
-ConstraintsItem { Neg? ((identifier | string) | ImportFeature) }
+ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" | "!="}
+ConstraintsItem { Neg? ((identifier | string | id) | ImportFeature) | BracketItem }
+BracketItem { OpenBracket ConstraintsItem CloseBracket }
 Neg { "!" }
 Brackets { !first OpenBracket Constraints CloseBracket }
 OpenBracket { "(" }
 CloseBracket { ")" }
-Number { number }
+Number { number | (OpenBracket Number NummericOperator Number CloseBracket)}
 
 Constraints {
-  (!last Operation Operator Number (ConstraintSign ConstraintsItem)?) |
-  (!last ConstraintsItem ConstraintSign ConstraintsItem) |
+  (!last Operation (Signs) Number (ConstraintSign ConstraintsItem)?) |
+  (!first ConstraintsItem ConstraintSign ConstraintsItem) |
   (!last ConstraintsItem ConstraintSign Constraints) |
-  (!first Constraints ConstraintSign ConstraintsItem) |
-  (!first Constraints ConstraintSign Constraints) |
-  (!last ConstraintsItem Operator ConstraintsItem Signs ConstraintsItem) |
-  (!last ConstraintsItem Operator Number ) |
+  (!first Constraints ConstraintSign (ConstraintsItem | Constraints | Number) ) |
+  (!first (Constraints | ConstraintsItem) SymbolicOperator Number) |
+  (!last ConstraintsItem SymbolicOperator ConstraintsItem Signs ConstraintsItem) |
   (!last ConstraintsItem ConstraintSign Number ) |
+  (!last (ConstraintsItem | Constraints) NummericOperator (ConstraintsItem | Constraints) ) |
+  (!only ConstraintsItem) |
+  (!last (ConstraintsItem | Constraints) SymbolicOperator ConstraintsItem) |
   (Neg? Brackets)
 }
 
-Operation { sum | avg | lenExpr}
+Operation {!first (sum | avg | lenExpr)}
 lenExpr {"len" "(" Key ")" }
 sum {"sum" "(" Key ")"}
 avg { "avg" "(" Key ")"}
-Operator { "+" | "-" | "*" | "/" | ">" | "<"}
-Signs { "<" | ">" | "=="}
+SymbolicOperator { ">" | "<"}
+NummericOperator { "+" | "-" | "*" | "/" }
+Signs { "<" | ">" | "==" | "=<" | "<=" }
 
 //!block
 StateBlock { indent  (State lineEnd FeatureBlock)+ (dedent | eof) }
 FeatureBlock { indent (ExtendedFeature lineEnd | StateFeature)+  (dedent | eof) }
 ConstraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
-ImportBlock { indent (Feature lineEnd)+  (dedent | eof) }
+ImportBlock { indent (((Feature | ImportFeature) ("as" Feature)?) lineEnd)+  (dedent | eof) }
+IncludeBlock { indent (include ("." (identifier | "*"))? lineEnd)+  (dedent | eof) }
 
 //!skip
 @skip {
@@ -99,8 +110,9 @@ lineEnd { newline | eof }
   newline { "\n" }
   eof { @eof }
   Comment { "#" ![\n]+ }
-  string { '"' (!["\\] | "\\" _)* '"' }
-  identifier { $[a-zA-Z0-9_]+ }
+  string { ('"' (!["\\] | "\\" _)* '"')  }
+  identifier { "-"? $[a-zA-Z0-9_]+ }
+  id { "'" "-"? $[0-9]+ "'" }
   number { $[0-9]+ }
   real { $[0-9]+ "." $[0-9]+}
 }	
