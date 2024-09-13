@@ -300,6 +300,8 @@ export const customLinter = linter(view => {
                     message: "A constraint can only have one pair of parentheses."
                 });
             }
+
+            let previousItem = null;
             node.node.getChildren("ConstraintsItem").forEach(constraintItemNode => {
                 let constraintItemText = view.state.doc.sliceString(constraintItemNode.from, constraintItemNode.to).trim();
 
@@ -327,7 +329,7 @@ export const customLinter = linter(view => {
                             });
                         }
                     }
-                }
+                } else {
                 let isId = /^'-?\d+'$/.test(constraintItemText);
                 if (!isId && !featureKeysMap.has(constraintItemText)) {
                     diagnostics.push({
@@ -337,6 +339,23 @@ export const customLinter = linter(view => {
                         message: `"${constraintItemText}" is neither a valid ID nor a declared feature.`
                     });
                 }
+                }
+                // Check for an operator between constraint items
+                //ToDo needs attention
+                if (previousItem) {
+                    let operatorText = view.state.doc.sliceString(previousItem.to, constraintItemNode.from).trim();
+                    if (!["&&", "||"].includes(operatorText)) {
+                        diagnostics.push({
+                            from: previousItem.to,
+                            to: constraintItemNode.from,
+                            severity: "error",
+                            message: "An operator (e.g. AND, OR) is required between constraint items."
+                        });
+                    }
+                }
+
+                // Update previousItem for the next iteration
+                previousItem = constraintItemNode;
             });
         }
         //blacklist and unrecognized
