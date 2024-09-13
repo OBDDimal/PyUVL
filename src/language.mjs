@@ -203,25 +203,26 @@ export const customLinter = linter(view => {
         "Brackets"
     ]
 
-    //constraints preparation
+    //constraints preparation. Collecting keys and mapping to features
     let featureKeysMap = new Map();
     syntaxTree(view.state).cursor().iterate(node => {
         if (node.name === "ExtendedFeature") {
             let featureNode = node.node.getChild("Feature");
+            let attributeItemNode = node.node.getChild("AttributeItem");
+
             if (featureNode) {
                 let featureText = view.state.doc.sliceString(featureNode.from, featureNode.to).trim();
 
-                let attributeSelectionNode = node.node.getChild("AttributeSelection");
-                let keys = [];
-
-                if (attributeSelectionNode) {
-                    //looking for possible keys
-                    attributeSelectionNode.getChildren("Key").forEach(keyNode => {
-                        let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
-                        keys.push(keyText);
+                if (attributeItemNode) {
+                    let keys = [];
+                    attributeItemNode.getChildren("AttributeSelection").forEach(selectionNode => {
+                        selectionNode.getChildren("Key").forEach(keyNode => {
+                            let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
+                            keys.push(keyText);
+                        });
                     });
+                    featureKeysMap.set(featureText, keys);
                 }
-                featureKeysMap.set(featureText, keys);
             }
         }
     });
