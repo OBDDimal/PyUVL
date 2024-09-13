@@ -53,7 +53,7 @@ Neg { "!" }
 Brackets { !first OpenBracket Constraints CloseBracket }
 OpenBracket { "(" }
 CloseBracket { ")" }
-Number { number | (OpenBracket Number NummericOperator Number CloseBracket)}
+Number { number | (OpenBracket Number NumericOperator Number CloseBracket)}
 
 Constraints {
   (!last Operation (Signs) Number (ConstraintSign ConstraintsItem)?) |
@@ -63,7 +63,7 @@ Constraints {
   (!first (Constraints | ConstraintsItem) SymbolicOperator Number) |
   (!last ConstraintsItem SymbolicOperator ConstraintsItem Signs ConstraintsItem) |
   (!last ConstraintsItem ConstraintSign Number ) |
-  (!last (ConstraintsItem | Constraints) NummericOperator (ConstraintsItem | Constraints) ) |
+  (!last (ConstraintsItem | Constraints) NumericOperator (ConstraintsItem | Constraints) ) |
   (!only ConstraintsItem) |
   (!last (ConstraintsItem | Constraints) SymbolicOperator ConstraintsItem) |
   (Neg? Brackets)
@@ -74,7 +74,7 @@ lenExpr {"len" "(" Key ")" }
 sum {"sum" "(" Key ")"}
 avg { "avg" "(" Key ")"}
 SymbolicOperator { ">" | "<"}
-NummericOperator { "+" | "-" | "*" | "/" }
+NumericOperator { "+" | "-" | "*" | "/" }
 Signs { "<" | ">" | "==" | "=<" | "<=" }
 
 //!block
