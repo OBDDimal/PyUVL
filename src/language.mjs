@@ -166,12 +166,17 @@ export const customLinter = linter(view => {
         "blankLineStart",
         "Comment",
         "Tree",
-        "FeatureBlock",
+        "IncludeBlock",
+        "ImportBlock",
         "Feature",
+        "ImportFeature",
+        "ImportName",
+        "Specifier",
+        "Root",
+        "FeatureBlock",
         "ExtendedFeature",
         "Type",
         "Cardinality",
-        "Number",
         "Min",
         "Max",
         "AttributeItem",
@@ -181,26 +186,43 @@ export const customLinter = linter(view => {
         "StateFeature",
         "StateBlock",
         "State",
+        "Counter",
         "ConstraintsBlock",
         "Constraints",
         "Operation",
-        "Attribute",
-        "Operator",
+        "Signs",
+        "Number",
+        "OpenBracket",
+        "NumericOperator",
+        "CloseBracket",
         "ConstraintSign",
         "ConstraintsItem",
         "Neg",
-        "Brackets",
-        "Signs",
-        "OpenBracket",
-        "CloseBracket",
-        "Root"
+        "BracketItem",
+        "SymbolicOperator",
+        "Brackets"
     ]
 
+    //constraints preparation
+    let featureKeysMap = new Map();
     syntaxTree(view.state).cursor().iterate(node => {
-        if (node.name === "Feature") {
-            // Extrahiere den Text des Feature-Knotens
-            let featureText = view.state.doc.sliceString(node.from, node.to).trim();
-            declaredFeatures.add(featureText);
+        if (node.name === "ExtendedFeature") {
+            let featureNode = node.node.getChild("Feature");
+            if (featureNode) {
+                let featureText = view.state.doc.sliceString(featureNode.from, featureNode.to).trim();
+
+                let attributeSelectionNode = node.node.getChild("AttributeSelection");
+                let keys = [];
+
+                if (attributeSelectionNode) {
+                    //looking for possible keys
+                    attributeSelectionNode.getChildren("Key").forEach(keyNode => {
+                        let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
+                        keys.push(keyText);
+                    });
+                }
+                featureKeysMap.set(featureText, keys);
+            }
         }
     });
 
@@ -251,7 +273,7 @@ export const customLinter = linter(view => {
 
                     if (valueNode) {
                         let valueText = view.state.doc.sliceString(valueNode.from, valueNode.to);
-                        if (!/^\d+$/.test(valueText) && !/^["].*["]$/.test(valueText) && !/^'[a-zA-Z_]\w*'$/.test(valueText)) {
+                        if (!/^-?\d+$/.test(valueText) && !/^["].*["]$/.test(valueText) && !/^'[a-zA-Z_]\w*'$/.test(valueText)) {
                             diagnostics.push({
                                 from: valueNode.from,
                                 to: valueNode.to,
@@ -279,31 +301,40 @@ export const customLinter = linter(view => {
                 });
             }
             node.node.getChildren("ConstraintsItem").forEach(constraintItemNode => {
-                let constraintItemText = view.state.doc.sliceString(constraintItemNode.from, constraintItemNode.to);
+                let constraintItemText = view.state.doc.sliceString(constraintItemNode.from, constraintItemNode.to).trim();
 
-                //remove ! from Feature
+                // Remove '!' from Feature
                 let isNegated = constraintItemText.startsWith("!");
                 if (isNegated) {
                     constraintItemText = constraintItemText.slice(1).trim();
                 }
-                if (!declaredFeatures.has(constraintItemText)) {
-                    diagnostics.push({
-                        from: constraintItemNode.from,
-                        to: constraintItemNode.to,
-                        severity: "error",
-                        message: `"${constraintItemText}" is not a declared feature.`
-                    });
+
+                //ToDO doesnt work yet
+                // Check if it's a Feature or Feature.Key
+                let [feature, key] = constraintItemText.split(".");
+
+                // Check if it's a valid feature
+                if (featureKeysMap.has(feature)) {
+                    // If a key is provided, check if it's a valid key for this feature
+                    if (key) {
+                        let validKeys = featureKeysMap.get(feature);
+                        if (!validKeys.includes(key)) {
+                            diagnostics.push({
+                                from: constraintItemNode.from,
+                                to: constraintItemNode.to,
+                                severity: "error",
+                                message: `"${key}" is not a valid key for the feature "${feature}".`
+                            });
+                        }
+                    }
                 }
-
-                let before = constraintItemText.slice(0, constraintItemNode.from - node.from).trim();
-                let after = constraintItemText.slice(constraintItemNode.to - node.from).trim();
-
-                if (before.endsWith("(") || after.startsWith(")")) {
+                let isId = /^'-?\d+'$/.test(constraintItemText);
+                if (!isId && !featureKeysMap.has(constraintItemText)) {
                     diagnostics.push({
                         from: constraintItemNode.from,
                         to: constraintItemNode.to,
                         severity: "error",
-                        message: "Constraint items should not be enclosed by parentheses."
+                        message: `"${constraintItemText}" is neither a valid ID nor a declared feature.`
                     });
                 }
             });
