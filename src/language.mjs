@@ -136,6 +136,7 @@ let parserWithMetadata = parser.configure({
             Value: t.keyword,
             Number: t.keyword,
             FeatureModel: t.keyword,
+            ImportName: t.keyword,
             //tagName colour
             State: t.tagName,
             Neg: t.keyword,
@@ -143,6 +144,10 @@ let parserWithMetadata = parser.configure({
             Operator: t.tagName,
             ConstraintSign: t.tagName,
             Cardinality: t.tagName,
+            Key: t.tagName,
+            Max: t.tagName,
+            Min: t.tagName,
+            Specifier: t.tagName,
             AbstractFeature: t.tagName,
             //labelName colour not defined
             Brackets: t.bracket,
