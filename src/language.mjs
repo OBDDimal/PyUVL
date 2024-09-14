@@ -343,6 +343,7 @@ export const customLinter = linter(view => {
                 if (isNegated) {
                     constraintItemText = constraintItemText.slice(1).trim();
                 }
+                let isId = /^'-?\d+'$/.test(constraintItemText);
 
                 let [feature, key] = constraintItemText.split(".");
                 // Check if it's a valid feature
@@ -359,37 +360,25 @@ export const customLinter = linter(view => {
                             });
                         }
                     }
-                } else {
-                let isId = /^'-?\d+'$/.test(constraintItemText);
-                if (!isId && !featureKeysMap.has(constraintItemText)) {
-                    diagnostics.push({
-                        from: constraintItemNode.from,
-                        to: constraintItemNode.to,
-                        severity: "error",
-                        message: `"${constraintItemText}" is neither a valid ID nor a declared feature.`
-                    });
-                }
-                }
-                // Check for an operator between constraint items
-                //ToDo needs attention
-                if (previousItem !== null) {
-                    console.log("previousItem vorhanden:", previousItem);
-                    let operatorText = view.state.doc.sliceString(previousItem.to, constraintItemNode.from).trim();
-                    console.log("Operator:", operatorText);
-
-                    if (!["&&", "||"].includes(operatorText)) {
+                } else if (!isId && !featureKeysMap.has(constraintItemText)) {
                         diagnostics.push({
-                            from: previousItem.to,
-                            to: constraintItemNode.from,
+                            from: constraintItemNode.from,
+                            to: constraintItemNode.to,
                             severity: "error",
-                            message: "An operator (e.g. AND, OR) is required between constraint items."
+                            message: `"${constraintItemText}" is neither a valid ID nor a declared feature.`
                         });
-                    }
+                    let words = constraintItemText.trim().split(/\s+/);
+                        words.forEach(word => {
+                            if (featureKeysMap.has(word)) {
+                                diagnostics.push({
+                                    from: constraintItemNode.from,
+                                    to: constraintItemNode.to,
+                                    severity: "error",
+                                    message: `"${word}" has to be seperated by an operator.`
+                                });
+                            }
+                        });
                 }
-
-                // Update previousItem for the next iteration
-                console.log("previousItem gesetzt auf:", previousItem);
-                previousItem = constraintItemNode;
             });
         }
         //blacklist and unrecognized
