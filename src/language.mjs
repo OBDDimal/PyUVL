@@ -264,13 +264,13 @@ export const customLinter = linter(view => {
                 let min = parseInt(match[1], 10);
                 let max = parseInt(match[2], 10);
 
-                if (min >= max) {
+                if (min > max) {
                     // Max Min error
                     diagnostics.push({
                         from: node.from,
                         to: node.to,
                         severity: "error",
-                        message: `Invalid cardinality: Min (${min}) must be less than Max (${max})`,
+                        message: `Invalid syntax: Min (${min}) must be less than Max (${max})`,
                     });
                 }
             } else {
@@ -372,9 +372,11 @@ export const customLinter = linter(view => {
                 }
                 // Check for an operator between constraint items
                 //ToDo needs attention
-                if (previousItem) {
-                    console.log("true")
+                if (previousItem !== null) {
+                    console.log("previousItem vorhanden:", previousItem);
                     let operatorText = view.state.doc.sliceString(previousItem.to, constraintItemNode.from).trim();
+                    console.log("Operator:", operatorText);
+
                     if (!["&&", "||"].includes(operatorText)) {
                         diagnostics.push({
                             from: previousItem.to,
@@ -386,7 +388,7 @@ export const customLinter = linter(view => {
                 }
 
                 // Update previousItem for the next iteration
-                console.log(previousItem)
+                console.log("previousItem gesetzt auf:", previousItem);
                 previousItem = constraintItemNode;
             });
         }
@@ -397,10 +399,6 @@ export const customLinter = linter(view => {
                 to: node.to,
                 severity: "error",
                 message: "Features have to be connected with \" or ' ",
-                actions: [{
-                    name: "Remove",
-                    apply(view, from, to) { view.dispatch({ changes: { from, to } }) }
-                }]
             });
         }
     });
