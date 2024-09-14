@@ -159,10 +159,11 @@ let parserWithMetadata = parser.configure({
 //error highlighting as a extension to the language support
 export const customLinter = linter(view => {
     let diagnostics = [];
-    let declaredFeatures = new Set();
     const list = [
         "indent",
         "dedent",
+        "FeaturesSection",
+        "ConstraintsSection",
         "blankLineStart",
         "Comment",
         "Tree",
@@ -222,14 +223,40 @@ export const customLinter = linter(view => {
                         });
                     });
                     featureKeysMap.set(featureText, keys);
+                } else {
+                    featureKeysMap.set(featureText, "")
                 }
             }
         }
     });
-
+    syntaxTree(view.state).cursor().iterate(node => {
+        if (node.name === "ConstraintsSection") {
+            let blockText = view.state.doc.sliceString(node.from, node.to).trim();
+            let firstWord = blockText.split(/\s+/)[0];
+            if (firstWord !== "constraints") {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: 'The ConstraintsBlock must start with "constraints".'
+                });
+            }
+        } else if (node.name === "FeaturesSection") {
+            let blockText = view.state.doc.sliceString(node.from, node.to).trim();
+            let firstWord = blockText.split(/\s+/)[0];
+            if (firstWord !== "features") {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: 'The FeaturesSection must start with "features".'
+                });
+            }
+        }
+    });
     syntaxTree(view.state).cursor().iterate(node => {
         //cardinality [Min..Max]
-        if (node.name === "Cardinality") {
+        if (node.name === "Cardinality" || node.name === "Counter") {
             const text = view.state.doc.sliceString(node.from, node.to);
             const match = text.match(/\[\s*(\d+)\s*\.\.\s*(\d+)\s*\]/);
 
@@ -246,9 +273,15 @@ export const customLinter = linter(view => {
                         message: `Invalid cardinality: Min (${min}) must be less than Max (${max})`,
                     });
                 }
+            } else {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: `The pattern is number1 .. number2.`,
+                });
             }
-        }
-        if (node.name === "ExtendedFeature") {
+        } else if (node.name === "ExtendedFeature") {
             let featureNode = node.node.getChild("Feature");
             let attributeNode = node.node.getChild("AttributeItem");
             if (featureNode) {
@@ -271,7 +304,6 @@ export const customLinter = linter(view => {
             if (attributeNode) {
                 attributeNode.getChildren("AttributeSelection").forEach(selectionNode => {
                     let valueNode = selectionNode.getChild("Value");
-
                     if (valueNode) {
                         let valueText = view.state.doc.sliceString(valueNode.from, valueNode.to);
                         if (!/^-?\d+$/.test(valueText) && !/^["].*["]$/.test(valueText) && !/^'[a-zA-Z_]\w*'$/.test(valueText)) {
@@ -312,10 +344,7 @@ export const customLinter = linter(view => {
                     constraintItemText = constraintItemText.slice(1).trim();
                 }
 
-                //ToDO doesnt work yet
-                // Check if it's a Feature or Feature.Key
                 let [feature, key] = constraintItemText.split(".");
-
                 // Check if it's a valid feature
                 if (featureKeysMap.has(feature)) {
                     // If a key is provided, check if it's a valid key for this feature
@@ -344,6 +373,7 @@ export const customLinter = linter(view => {
                 // Check for an operator between constraint items
                 //ToDo needs attention
                 if (previousItem) {
+                    console.log("true")
                     let operatorText = view.state.doc.sliceString(previousItem.to, constraintItemNode.from).trim();
                     if (!["&&", "||"].includes(operatorText)) {
                         diagnostics.push({
@@ -356,11 +386,12 @@ export const customLinter = linter(view => {
                 }
 
                 // Update previousItem for the next iteration
+                console.log(previousItem)
                 previousItem = constraintItemNode;
             });
         }
         //blacklist and unrecognized
-        else if (!list.includes(node.name)) {
+        if (!list.includes(node.name)) {
             diagnostics.push({
                 from: node.from,
                 to: node.to,

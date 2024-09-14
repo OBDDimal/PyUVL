@@ -1,6 +1,6 @@
 @precedence { first @left, last @left, only @left}
 
-@top Tree { includeSection? importSection? featuresSection constraintsSection? }
+@top Tree { includeSection? importSection? FeaturesSection ConstraintsSection? }
 
 importSection { "imports" lineEnd ImportBlock}
 includeSection { "include" lineEnd IncludeBlock}
@@ -10,7 +10,7 @@ include {
   "Type"
 }
 
-featuresSection { Root lineEnd FeatureBlock }
+FeaturesSection { Root lineEnd FeatureBlock }
 Root { "features" }
 
 StateFeature { !last ExtendedFeature lineEnd StateBlock }
@@ -28,7 +28,7 @@ Max {number}
 
 AttributeSelection { Key Value? }
 Key { identifier | string | "'" identifier "'" }
-Value { ("-"? number) | string | "'" identifier+ "'" | boolean | ("-"? real) | AttributeItem}
+Value { ("-"? number) | string | "'" identifier+ "'" | boolean | ("-"? real) | AttributeItem | identifier}
 boolean { "true" | "false" }
 
 //!utility
@@ -44,7 +44,7 @@ State{
 }
 
 //!constraints section
-constraintsSection { "constraints" lineEnd ConstraintsBlock+ }
+ConstraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
 ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" | "!="}
 ConstraintsItem { Neg? ((identifier | string | id) | ImportFeature) | BracketItem }
@@ -105,7 +105,7 @@ lineEnd { newline | eof }
 }
 //!tokens
 @tokens {
-  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len",real, number, identifier}
+  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", "-", "false", "true",real, number, identifier}
   spaces { $[ \t]+ }
   newline { "\n" }
   eof { @eof }
