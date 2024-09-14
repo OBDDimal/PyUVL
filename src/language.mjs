@@ -11,28 +11,6 @@ import {autocompletion} from "@codemirror/autocomplete";
 import { linter } from "@codemirror/lint";
 import {OpenBracket, Signs} from "./parser.terms.mjs";
 
-//autocompletion for FeatureNames
-//ToDO remove in next patch
-function customAutocomplete(context) {
-    let word = context.matchBefore(/\w*/);
-    const blacklist = new Set(["mandatory", "or", "optional", "alternative"]);
-    if (word.from === word.to && !context.explicit)
-        return null;
-    let text = context.state.doc.toString();
-    let tokens = new Set(text.match(/\b\w+\b/g));
-    // create List
-    let options = [...tokens]
-        .filter(token => !blacklist.has(token))
-        .map(token => ({
-            label: token,
-            type: "keyword"
-        }));
-
-    return {
-        from: word.from,
-        options
-    };
-}
 //autocompletion for keywords with a line break
 function standardAutocomplete(context) {
     const keywords = ["mandatory", "optional", "alternative", "or", "constraints"];
@@ -51,27 +29,6 @@ function standardAutocomplete(context) {
         options,
         validFor: /^\w*$/
     };
-}
-//constraints autocompletion
-//ToDO outdated: remove or change in next patch
-function constraintAutocomplete2(context) {
-    let word = context.matchBefore(/\w*/);
-    if (word.from === word.to && !context.explicit) return null;
-    let nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
-    if (nodeBefore.name === "ConstraintItem") {
-        // then suggest | and =>
-        return {
-            from: context.pos,
-            options: [
-                { label: " |", type: "operator" },
-                { label: " =>", type: "operator" },
-                { label: " &", type: "operator" }
-            ],
-            validFor: /^[|=>&]*$/ // valid for
-        };
-    }
-//no suggestion
-    return null;
 }
 function constraintAutocomplete(context) {
     let word = context.matchBefore(/\w*/);
