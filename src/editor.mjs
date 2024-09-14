@@ -1,10 +1,12 @@
 import { LitElement, html } from 'lit';
 import { EditorView, basicSetup } from 'codemirror';
-import {defaultKeymap} from "@codemirror/commands"
+import {defaultKeymap, indentWithTab} from "@codemirror/commands"
 import { EditorState } from '@codemirror/state';
 import {UVLLanguageSupport, autocompleteExtension, customLinter} from './language.mjs';
 import {lintGutter} from "@codemirror/lint";
 import {keymap} from "@codemirror/view"
+//tab size
+import { indentUnit } from '@codemirror/language';
 
 class CodeMirrorEditor extends LitElement {
 
@@ -861,7 +863,8 @@ constraints
           UVLLanguageSupport,
           customLinter,
           lintGutter(),
-          keymap.of(defaultKeymap)
+          keymap.of([defaultKeymap,indentWithTab]),
+          indentUnit.of("    ")
       ],
     });
 
