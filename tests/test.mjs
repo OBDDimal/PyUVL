@@ -1,13 +1,30 @@
 import { parser } from '../src/parser.mjs';
 import * as fs from 'fs';
+import { readdirSync, readFileSync } from 'fs';
+import { fileTests } from '@lezer/generator/test';
 import * as path from 'path';
 import assert from 'assert';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join, extname } from 'path';
 
 // Get the directory name of the current module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/*
+export function parseTests(dir) {
+    const testFiles = getAllTestFiles(dir);
+
+    testFiles.forEach(file => {
+        let tests = fileTests(readFileSync(file, 'utf8'), file);
+        describe(file, () => {
+            tests.forEach(({ name, run }) => {
+                it(name, () => run(parser));
+            });
+        });
+    });
+}
+ */
 
 // Function to recursively find all files in a directory and its subdirectories
 function getAllTestFiles(dir) {
@@ -49,8 +66,8 @@ describe('Parser Tests', () => {
             // Check if the parse tree is not null or undefined
             assert(parseTree, `Parse tree should be generated for file ${file} without errors`);
 
-            // Optional: Check if the tree has a root node
             assert(parseTree.topNode, `Parse tree should have a topNode for file ${file}`);
         });
     });
+    //parseTests(testDir);
 });
