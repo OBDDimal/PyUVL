@@ -1,23 +1,37 @@
-@precedence { first @left, last @left}
+@precedence { first @left, last @left, only @left}
 
-@top Tree { featuresSection constraintsSection? }
+@top Tree { includeSection? importSection? FeaturesSection ConstraintsSection? }
 
-featuresSection {identifier lineEnd FeatureBlock }
+importSection { "imports" lineEnd ImportBlock}
+includeSection { "include" lineEnd IncludeBlock}
+include {
+  "Boolean" |
+  "Arithmetic" |
+  "Type"
+}
 
-StateFeature { ExtendedFeature lineEnd StateBlock }
+FeaturesSection { Root lineEnd FeatureBlock }
+Root { "features" }
+
+StateFeature { !last ExtendedFeature lineEnd StateBlock }
+ImportFeature { ImportName ("."  Specifier)+}
+ImportName { (identifier | string) }
+Specifier { (identifier | string) }
 Feature { (identifier | string) }
-ExtendedFeature {ReqExp? Type? Feature ReqExp? Cardinality? AttributeItem?}
+ExtendedFeature {!first Type? (Feature | ImportFeature) ReqExp? Cardinality? AttributeItem? }
 Type { "Integer" | "String" | "Real" | "Boolean"}
 AttributeItem {!first "{" list<AttributeSelection> "}"}
 Cardinality {!last "cardinality " "[" Min ".." Max "]"}
+Counter { !first "[" Min ".." Max "]" }
 Min {number}
 Max {number}
 
 AttributeSelection { Key Value? }
-Key { identifier | string }
-Value { number | string | "'" identifier "'"}
+Key { identifier | string | "'" identifier "'" }
+Value { ("-"? number) | string | "'" identifier+ "'" | boolean | ("-"? real) | AttributeItem | identifier}
+boolean { "true" | "false" }
 
-//!utilty
+//!utility
 ReqExp { !last (identifier | string) }
 list<item> { item ("," item)* }
 
@@ -25,38 +39,50 @@ State{
   ("mandatory"
    | "optional"
    | "alternative"
-   | "or")
+   | "or"
+   | Counter)
 }
 
 //!constraints section
-constraintsSection { "constraints" lineEnd ConstraintsBlock+ }
+ConstraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
-ConstraintSign { "|" | "=>" | "&" | "==" }
-ConstraintsItem { Neg? (identifier | string) }
+ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" | "!="}
+ConstraintsItem { Neg? ((identifier | string | id) | ImportFeature) | BracketItem }
+BracketItem { OpenBracket ConstraintsItem CloseBracket }
 Neg { "!" }
-Brackets { "(" Constraints ")" }
-Number { number }
+Brackets { !first OpenBracket Constraints CloseBracket }
+OpenBracket { "(" }
+CloseBracket { ")" }
+Number { number | (OpenBracket Number NumericOperator Number CloseBracket)}
 
 Constraints {
-  (!last Operation Operator Number (ConstraintSign ConstraintsItem)?) |
-  (!last ConstraintsItem ConstraintSign ConstraintsItem) |
-  (!first ConstraintsItem ConstraintSign Constraints) |
-  (!first Constraints ConstraintSign ConstraintsItem) |
-  (!first Constraints ConstraintSign Constraints) |
+  (!last Operation (Signs) Number (ConstraintSign ConstraintsItem)?) |
+  (!first ConstraintsItem ConstraintSign ConstraintsItem) |
+  (!last ConstraintsItem ConstraintSign Constraints) |
+  (!first Constraints ConstraintSign (ConstraintsItem | Constraints | Number) ) |
+  (!first (Constraints | ConstraintsItem) SymbolicOperator Number) |
+  (!last ConstraintsItem SymbolicOperator ConstraintsItem Signs ConstraintsItem) |
+  (!last ConstraintsItem ConstraintSign Number ) |
+  (!last (ConstraintsItem | Constraints) NumericOperator (ConstraintsItem | Constraints) ) |
+  (!only ConstraintsItem) |
+  (!last (ConstraintsItem | Constraints) SymbolicOperator ConstraintsItem) |
   (Neg? Brackets)
 }
 
-Operation { sum | avg | lenExpr}
-lenExpr {"len" "(" Attribute ")" }
-sum {"sum" "(" Attribute ")"}
-avg { "avg" "(" Attribute ")"}
-Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
-Attribute { identifier | string }
+Operation {!first (sum | avg | lenExpr)}
+lenExpr {"len" "(" Key ")" }
+sum {"sum" "(" Key ")"}
+avg { "avg" "(" Key ")"}
+SymbolicOperator { ">" | "<"}
+NumericOperator { "+" | "-" | "*" | "/" }
+Signs { "<" | ">" | "==" | "=<" | "<=" }
 
 //!block
 StateBlock { indent  (State lineEnd FeatureBlock)+ (dedent | eof) }
 FeatureBlock { indent (ExtendedFeature lineEnd | StateFeature)+  (dedent | eof) }
 ConstraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
+ImportBlock { indent (((Feature | ImportFeature) ("as" Feature)?) lineEnd)+  (dedent | eof) }
+IncludeBlock { indent (include ("." (identifier | "*"))? lineEnd)+  (dedent | eof) }
 
 //!skip
 @skip {
@@ -79,12 +105,14 @@ lineEnd { newline | eof }
 }
 //!tokens
 @tokens {
-  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", number, identifier}
+  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", "-", "false", "true",real, number, identifier}
   spaces { $[ \t]+ }
   newline { "\n" }
   eof { @eof }
   Comment { "#" ![\n]+ }
-  string { '"' (!["\\] | "\\" _)* '"' }
-  identifier { $[a-zA-Z0-9_]+ }
+  string { ('"' (!["\\] | "\\" _)* '"')  }
+  identifier { "-"? $[a-zA-Z0-9_]+ }
+  id { "'" "-"? $[0-9]+ "'" }
   number { $[0-9]+ }
+  real { $[0-9]+ "." $[0-9]+}
 }	
