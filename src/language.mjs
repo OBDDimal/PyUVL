@@ -56,6 +56,7 @@ function constraintAutocomplete(context) {
         return {
             from: context.pos,
             options: [
+                //ToDO check | => &
                 { label: " |", type: "operator" },
                 { label: " =>", type: "operator" },
                 { label: " &", type: "operator" },
