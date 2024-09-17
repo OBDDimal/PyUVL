@@ -175,33 +175,42 @@ export const customLinter = linter(view => {
             if (featureNode) {
                 let featureText = view.state.doc.sliceString(featureNode.from, featureNode.to).trim();
 
-                if (attributeItemNode) {
-                    let keys = [];
-                    let keySet = new Set(); // To check for duplicate keys
-
-                    attributeItemNode.getChildren("AttributeSelection").forEach(selectionNode => {
-                        selectionNode.getChildren("Key").forEach(keyNode => {
-                            let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
-
-                            // Check if the key already exists in the keySet
-                            if (keySet.has(keyText)) {
-                                // If the key is duplicated, add an error to diagnostics
-                                diagnostics.push({
-                                    from: keyNode.from,
-                                    to: keyNode.to,
-                                    severity: "error",
-                                    message: `The key "${keyText}" is duplicated.`
-                                });
-                            } else {
-                                keySet.add(keyText); // Add key to the set
-                                keys.push(keyText);  // Also add key to the keys list
-                            }
-                        });
+                // Check if the feature is already in the map
+                if (featureKeysMap.has(featureText)) {
+                    diagnostics.push({
+                        from: featureNode.from,
+                        to: featureNode.to,
+                        severity: "error",
+                        message: `The feature "${featureText}" is defined more than once.`
                     });
-
-                    featureKeysMap.set(featureText, keys);
                 } else {
-                    featureKeysMap.set(featureText, "");
+                    if (attributeItemNode) {
+                        let keys = [];
+                        let keySet = new Set(); // To check for duplicate keys
+
+                        attributeItemNode.getChildren("AttributeSelection").forEach(selectionNode => {
+                            selectionNode.getChildren("Key").forEach(keyNode => {
+                                let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
+
+                                // Check if the key already exists in the keySet
+                                if (keySet.has(keyText)) {
+                                    diagnostics.push({
+                                        from: keyNode.from,
+                                        to: keyNode.to,
+                                        severity: "error",
+                                        message: `The key "${keyText}" is duplicated in the feature "${featureText}".`
+                                    });
+                                } else {
+                                    keySet.add(keyText); // Add key to the set
+                                    keys.push(keyText);  // Also add key to the keys list
+                                }
+                            });
+                        });
+
+                        featureKeysMap.set(featureText, keys);
+                    } else {
+                        featureKeysMap.set(featureText, "");
+                    }
                 }
             }
         }
