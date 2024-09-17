@@ -70,9 +70,6 @@ function constraintAutocomplete(context) {
     return null;
 }
 
-
-
-
 //using unused predefined token to create a color template for the language
 const customHighlightStyle = HighlightStyle.define([
     { tag: t.keyword, color: "#008080", fontWeight: "bold" },
@@ -169,6 +166,7 @@ export const customLinter = linter(view => {
 
     //constraints preparation. Collecting keys and mapping to features
     let featureKeysMap = new Map();
+
     syntaxTree(view.state).cursor().iterate(node => {
         if (node.name === "ExtendedFeature") {
             let featureNode = node.node.getChild("Feature");
@@ -179,15 +177,31 @@ export const customLinter = linter(view => {
 
                 if (attributeItemNode) {
                     let keys = [];
+                    let keySet = new Set(); // To check for duplicate keys
+
                     attributeItemNode.getChildren("AttributeSelection").forEach(selectionNode => {
                         selectionNode.getChildren("Key").forEach(keyNode => {
                             let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
-                            keys.push(keyText);
+
+                            // Check if the key already exists in the keySet
+                            if (keySet.has(keyText)) {
+                                // If the key is duplicated, add an error to diagnostics
+                                diagnostics.push({
+                                    from: keyNode.from,
+                                    to: keyNode.to,
+                                    severity: "error",
+                                    message: `The key "${keyText}" is duplicated.`
+                                });
+                            } else {
+                                keySet.add(keyText); // Add key to the set
+                                keys.push(keyText);  // Also add key to the keys list
+                            }
                         });
                     });
+
                     featureKeysMap.set(featureText, keys);
                 } else {
-                    featureKeysMap.set(featureText, "")
+                    featureKeysMap.set(featureText, "");
                 }
             }
         }
