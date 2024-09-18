@@ -1,30 +1,15 @@
+/*
 import { parser } from '../src/parser.mjs';
 import * as fs from 'fs';
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { fileTests } from '@lezer/generator/test';
 import * as path from 'path';
-import assert from 'assert';
 import { fileURLToPath } from 'url';
-import { dirname, join, extname } from 'path';
+import { dirname } from 'path';
 
 // Get the directory name of the current module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-/*
-export function parseTests(dir) {
-    const testFiles = getAllTestFiles(dir);
-
-    testFiles.forEach(file => {
-        let tests = fileTests(readFileSync(file, 'utf8'), file);
-        describe(file, () => {
-            tests.forEach(({ name, run }) => {
-                it(name, () => run(parser));
-            });
-        });
-    });
-}
- */
 
 // Function to recursively find all files in a directory and its subdirectories
 function getAllTestFiles(dir) {
@@ -51,6 +36,78 @@ describe('Parser Tests', () => {
     const testDir = path.join(__dirname, 'res_uvl'); // Adjust path to your test folder
     const testFiles = getAllTestFiles(testDir);
 
+    // Test each file using `fileTests` from `@lezer/generator/test`
+    testFiles.forEach(file => {
+        describe(`File: ${file}`, () => {
+            const inputContent = readFileSync(file, 'utf8');
+
+            // Generate test cases from the content using `fileTests`
+            const tests = fileTests(inputContent, file);
+
+            tests.forEach(({name, run}) => {
+                it(name, () => {
+                    // Execute the test case
+                    run(parser);
+                });
+            });
+        });
+    });
+});
+ */
+import { parser } from '../src/parser.mjs';
+import * as fs from 'fs';
+import * as path from 'path';
+import assert from 'assert';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Function to recursively find all files in a directory and its subdirectories
+function getAllTestFiles(dir) {
+    let results = [];
+    const list = fs.readdirSync(dir);
+
+    list.forEach(file => {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+
+        if (stat && stat.isDirectory()) {
+            // Recursively call for directories
+            results = results.concat(getAllTestFiles(filePath));
+        } else if (path.extname(file) === '.uvl') { // Only files with .uvl extension
+            results.push(filePath);
+        }
+    });
+
+    return results;
+}
+
+function checkForErrorsInTree(parseTree) {
+    const cursor = parseTree.cursor();
+    const errors = [];
+
+    do {
+        // '⚠' is a special Lezer node type used for parse errors
+        if (cursor.type.name === '⚠') {
+            errors.push({
+                from: cursor.from,
+                to: cursor.to,
+                message: 'Syntax error detected in parse tree'
+            });
+        }
+    } while (cursor.next());
+
+    return errors;
+}
+
+describe('Parser Tests', () => {
+    // Directory where test files and subdirectories are located
+    const testDir = path.join(__dirname, 'res_uvl'); // Adjust path to your test folder
+    const testFiles = getAllTestFiles(testDir);
+
     // Test each file
     testFiles.forEach(file => {
         it(`should parse the file ${file} without errors`, () => {
@@ -65,9 +122,16 @@ describe('Parser Tests', () => {
 
             // Check if the parse tree is not null or undefined
             assert(parseTree, `Parse tree should be generated for file ${file} without errors`);
-
             assert(parseTree.topNode, `Parse tree should have a topNode for file ${file}`);
+
+            // Check for errors in the parse tree
+            const errors = checkForErrorsInTree(parseTree);
+            if (errors.length > 0) {
+                assert.fail(`Parsing failed for ${file} due to syntax errors: ${JSON.stringify(errors)}`);
+            }
         });
     });
-    //parseTests(testDir);
 });
+
+
+
