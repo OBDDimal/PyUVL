@@ -319,8 +319,24 @@ export const customLinter = linter(view => {
                     message: "A constraint can only have one pair of parentheses."
                 });
             }
+            node.node.getChildren("Operation").forEach(operationNode => {
+                let keyNode = operationNode.getChild("Key");
+                if (keyNode) {
+                    let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
+                    //ToDo enable for Keys too. find bug
+                    if (!featureKeysMap.has(keyText)) {
+                        diagnostics.push({
+                            from: keyNode.from,
+                            to: keyNode.to,
+                            severity: "error",
+                            message: `"${keyText}" is not a valid key or feature.`
+                        });
+                    }
+                }
+            });
 
-            let previousItem = null;
+            // ToDo remove after testing
+            //let previousItem = null;
             node.node.getChildren("ConstraintsItem").forEach(constraintItemNode => {
                 let constraintItemText = view.state.doc.sliceString(constraintItemNode.from, constraintItemNode.to).trim();
 
