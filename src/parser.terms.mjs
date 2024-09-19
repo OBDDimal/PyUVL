@@ -39,7 +39,7 @@ export const
   CloseBracket = 34,
   ConstraintSign = 35,
   ConstraintsItem = 36,
-  Neg = 37,
-  BracketItem = 38,
-  SymbolicOperator = 39,
+  BracketItem = 37,
+  SymbolicOperator = 38,
+  Neg = 39,
   Brackets = 40

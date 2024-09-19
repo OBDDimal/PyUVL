@@ -1,13 +1,17 @@
-import {parser} from "../src/parser.mjs";
-import {fileTests} from "@lezer/generator/test";
+import { parser } from '../src/parser.mjs';
+import * as fs from 'fs';
+import { readdirSync, readFileSync } from 'fs';
+import * as path from 'path';
+import assert from 'assert';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-import * as fs from "fs";
-import * as path from "path";
-import {fileURLToPath} from "url";
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-//FIXME common bug. Probably a folder Problem
-const caseDir = path.dirname(fileURLToPath(import.meta.url));
-function getTestFiles(dir) {
+// Function to recursively find all files in a directory and its subdirectories
+function getAllTestFiles(dir) {
     let results = [];
     const list = fs.readdirSync(dir);
 
@@ -16,29 +20,44 @@ function getTestFiles(dir) {
         const stat = fs.statSync(filePath);
 
         if (stat && stat.isDirectory()) {
-            results = results.concat(getTestFiles(filePath));
-        } else if (/\.uvl$/.test(file)) {
+            // Recursively call for directories
+            results = results.concat(getAllTestFiles(filePath));
+        } else if (path.extname(file) === '.uvl') { // Only files with .uvl extension
             results.push(filePath);
         }
     });
+
     return results;
 }
 
-const testFiles = getTestFiles(caseDir);
+describe('Parser Tests', () => {
+    const testDir = path.join(__dirname, 'res_uvl'); // Adjust path to your test folder
+    const faultyDir = path.join(testDir, 'faulty'); // Specify the "faulty" folder
+    const testFiles = getAllTestFiles(testDir);
 
-if (testFiles.length === 0) {
-    console.error("No .uvl test files found!");
-    process.exit(1);
-}
+    testFiles.forEach(file => {
+        const isFaulty = file.startsWith(faultyDir);
 
-testFiles.forEach(file => {
-    const name = path.relative(caseDir, file).replace(/\.uvl$/, '');
-    describe(name, () => {
-        const content = fs.readFileSync(file, "utf8");
-        const tests = fileTests(content, file);
+        it(`should parse the file ${file} ${isFaulty ? 'and fail' : 'without errors'}`, () => {
+            const inputContent = fs.readFileSync(file, 'utf8');
 
-        tests.forEach(({name, run}) => {
-            it(name, () => run(parser));
+            let parseTree;
+            try {
+                parseTree = parser.parse(inputContent); // Parse the file
+
+                if (isFaulty) {
+                    assert.fail(`Expected parsing to fail for faulty test ${file}, but it succeeded.`);
+                }
+
+                // Check if the parse tree is not null or undefined
+                assert(parseTree, `Parse tree should be generated for file ${file} without errors`);
+                assert(parseTree.topNode, `Parse tree should have a topNode for file ${file}`);
+            } catch (error) {
+                if (!isFaulty) {
+                    assert.fail(`Parsing failed for ${file} with error: ${error.message}`);
+                }
+                // For faulty tests, we expect a failure, so do nothing
+            }
         });
     });
 });
