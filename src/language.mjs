@@ -9,7 +9,7 @@ import {LanguageSupport, HighlightStyle, syntaxTree} from '@codemirror/language'
 import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
 import { linter } from "@codemirror/lint";
-import {OpenBracket, Signs} from "./parser.terms.mjs";
+import {ConstraintsSection, OpenBracket, Root, Signs} from "./parser.terms.mjs";
 
 //autocompletion for keywords with a line break
 function standardAutocomplete(context) {
@@ -76,7 +76,8 @@ const customHighlightStyle = HighlightStyle.define([
     { tag: t.typeName, color: "#0022ff"},
     { tag: t.tagName, color: "#0022ff", fontWeight: "bold"},
     { tag: t.operator, color: "#404080"},
-    { tag: t.bracket, color: "#ae2eae", fontWeight: "bold"}
+    { tag: t.bracket, color: "#ae2eae", fontWeight: "bold"},
+    { tag: t.className, color: "#830505", fontWeight: "bold"}
 ]);
 
 //connecting Token form parser to the color template. Folding and all the other logic is designed to be here
@@ -110,6 +111,9 @@ let parserWithMetadata = parser.configure({
             Type: t.bracket,
             //typeName colour
             ConstraintItem: t.typeName,
+            //className
+            ConstraintsSection: t.className,
+            Root: t.className,
             //other
             LineComment: t.lineComment,
         }),
@@ -323,13 +327,18 @@ export const customLinter = linter(view => {
                 let keyNode = operationNode.getChild("Key");
                 if (keyNode) {
                     let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
-                    //ToDo enable for Keys too. find bug
-                    if (!featureKeysMap.has(keyText)) {
+
+                    //Only for keys
+                    let allKeys = [];
+                    featureKeysMap.forEach(keysArray => {
+                        allKeys = allKeys.concat(keysArray); // Alle Keys aus der Map sammeln
+                    });
+                    if (!allKeys.includes(keyText)) {
                         diagnostics.push({
                             from: keyNode.from,
                             to: keyNode.to,
                             severity: "error",
-                            message: `"${keyText}" is not a valid key or feature.`
+                            message: `"${keyText}" is not a valid key.`
                         });
                     }
                 }
