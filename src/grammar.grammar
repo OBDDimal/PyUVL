@@ -48,9 +48,9 @@ State{
 ConstraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
 ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" | "!="}
-ConstraintsItem { ((identifier | string | id ) | ImportFeature) | BracketItem }
+ConstraintsItem { BooleanNeg? ((identifier | string | id ) | ImportFeature) | BracketItem }
 BracketItem { OpenBracket ConstraintsItem CloseBracket }
-Neg { "!" }
+BooleanNeg { "!" }
 Brackets { !first OpenBracket Constraints CloseBracket }
 OpenBracket { "(" }
 CloseBracket { ")" }
@@ -68,7 +68,7 @@ Constraints {
   (!last (ConstraintsItem | Constraints) NumericOperator (ConstraintsItem | Constraints) ) |
   (!only ConstraintsItem) |
   (!last (ConstraintsItem | Constraints) SymbolicOperator ConstraintsItem) |
-  (Neg? Brackets)
+  (BooleanNeg? Brackets)
 }
 
 Operation {!first (sum | avg | lenExpr)}

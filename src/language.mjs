@@ -158,7 +158,7 @@ export const customLinter = linter(view => {
         "CloseBracket",
         "ConstraintSign",
         "ConstraintsItem",
-        "Neg",
+        "BooleanNeg",
         "BracketItem",
         "SymbolicOperator",
         "Brackets"
@@ -334,9 +334,6 @@ export const customLinter = linter(view => {
                     }
                 }
             });
-
-            // ToDo remove after testing
-            //let previousItem = null;
             node.node.getChildren("ConstraintsItem").forEach(constraintItemNode => {
                 let constraintItemText = view.state.doc.sliceString(constraintItemNode.from, constraintItemNode.to).trim();
 
