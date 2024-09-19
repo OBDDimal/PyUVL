@@ -1,7 +1,8 @@
 @precedence { first @left, last @left, only @left}
 
-@top Tree { includeSection? importSection? FeaturesSection ConstraintsSection? }
+@top Tree { (namespaceSection | includeSection | importSection)? FeaturesSection ConstraintsSection? }
 
+namespaceSection { "namespace" identifier lineEnd }
 importSection { "imports" lineEnd ImportBlock}
 includeSection { "include" lineEnd IncludeBlock}
 include {
@@ -23,12 +24,12 @@ Type { "Integer" | "String" | "Real" | "Boolean"}
 AttributeItem {!first "{" list<AttributeSelection> "}"}
 Cardinality {!last "cardinality " "[" Min ".." Max "]"}
 Counter { !first "[" Min ".." Max "]" }
-Min {number}
-Max {number}
+Min {unsignedInteger}
+Max {unsignedInteger}
 
 AttributeSelection { Key Value? }
 Key { identifier | string | "'" identifier "'" }
-Value { ("-"? number) | string | "'" identifier+ "'" | boolean | ("-"? real) | AttributeItem | identifier}
+Value { integer | unsignedInteger | string | "'" identifier+ "'" | boolean | ("-"? real) | AttributeItem | identifier}
 boolean { "true" | "false" }
 
 //!utility
@@ -47,22 +48,23 @@ State{
 ConstraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
 ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" | "!="}
-ConstraintsItem { Neg? ((identifier | string | id | extIdentifier) | ImportFeature) | BracketItem }
+ConstraintsItem { ((identifier | string | id ) | ImportFeature) | BracketItem }
 BracketItem { OpenBracket ConstraintsItem CloseBracket }
 Neg { "!" }
 Brackets { !first OpenBracket Constraints CloseBracket }
 OpenBracket { "(" }
 CloseBracket { ")" }
-Number { ("-"? number) | (OpenBracket Number NumericOperator Number CloseBracket)}
+Number { integer | unsignedInteger | numericTerm }
+numericTerm { OpenBracket Number NumericOperator Number CloseBracket }
 
 Constraints {
   (!last Operation (Signs) Number (ConstraintSign ConstraintsItem)?) |
   (!first ConstraintsItem ConstraintSign ConstraintsItem) |
   (!last ConstraintsItem ConstraintSign Constraints) |
-  (!first Constraints ConstraintSign (ConstraintsItem | Constraints | Number) ) |
+  (!first Constraints ConstraintSign (ConstraintsItem | Constraints | (integer | unsignedInteger)) ) |
   (!first (Constraints | ConstraintsItem) SymbolicOperator Number) |
   (!last ConstraintsItem SymbolicOperator ConstraintsItem Signs ConstraintsItem) |
-  (!last ConstraintsItem ConstraintSign Number ) |
+  (!last ConstraintsItem ConstraintSign (integer | unsignedInteger) ) |
   (!last (ConstraintsItem | Constraints) NumericOperator (ConstraintsItem | Constraints) ) |
   (!only ConstraintsItem) |
   (!last (ConstraintsItem | Constraints) SymbolicOperator ConstraintsItem) |
@@ -105,15 +107,44 @@ lineEnd { newline | eof }
 }
 //!tokens
 @tokens {
-  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", "-", "false", "true",real, number, identifier, extIdentifier, id}
+  @precedence {
+    "mandatory",
+    "optional",
+    "alternative",
+    "or",
+    "constraints",
+    "cardinality ",
+    integer,
+    "sum",
+    "avg",
+    "Integer",
+    "Real",
+    "String",
+    "Boolean",
+    "len",
+    "-",
+    "false",
+    "true",
+    real,
+    unsignedInteger,
+    identifier,
+    extIdentifier,
+    id,
+    string
+  }
   spaces { $[ \t]+ }
   newline { "\n" }
   eof { @eof }
   Comment { "#" ![\n]+ }
-  string { ('"' (!["\\] | "\\" _)* '"')  }
+  string {
+    "\"" (!["\\] | "\\" _)*
+    "\"" |
+    "'" (!['\\] | "\\" _)*
+    "'"
+  }
   identifier { ("-"? $[a-zA-Z0-9_])+ }
-  extIdentifier { "'" $[a-zA-Z0-9_]+ "'" }
   id { "'" "-"? $[0-9]+ "'" }
-  number { $[0-9]+ }
+  unsignedInteger { $[0-9]+ }
+  integer { "-" unsignedInteger }
   real { $[0-9]+ "." $[0-9]+}
 }	
