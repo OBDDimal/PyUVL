@@ -1,11 +1,12 @@
 {
   "name": "uvl_editor",
   "version": "0.0.1",
+  "type": "module",
   "scripts": {
     "build": "npm run parser && rollup -c",
     "dev": "npm run parser && rollup -c -w",
     "parser": "lezer-generator src/grammar.grammar -o src/parser.mjs",
-    "test": "mocha tests/tests.mjs"
+    "test": "mocha tests/test.mjs"
   },
   "devDependencies": {
     "@lezer/generator": "^1.0.0",

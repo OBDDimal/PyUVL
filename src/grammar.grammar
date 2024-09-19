@@ -47,13 +47,13 @@ State{
 ConstraintsSection { "constraints" lineEnd ConstraintsBlock+ }
 
 ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" | "!="}
-ConstraintsItem { Neg? ((identifier | string | id) | ImportFeature) | BracketItem }
+ConstraintsItem { Neg? ((identifier | string | id | extIdentifier) | ImportFeature) | BracketItem }
 BracketItem { OpenBracket ConstraintsItem CloseBracket }
 Neg { "!" }
 Brackets { !first OpenBracket Constraints CloseBracket }
 OpenBracket { "(" }
 CloseBracket { ")" }
-Number { number | (OpenBracket Number NumericOperator Number CloseBracket)}
+Number { ("-"? number) | (OpenBracket Number NumericOperator Number CloseBracket)}
 
 Constraints {
   (!last Operation (Signs) Number (ConstraintSign ConstraintsItem)?) |
@@ -105,13 +105,14 @@ lineEnd { newline | eof }
 }
 //!tokens
 @tokens {
-  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", "-", "false", "true",real, number, identifier}
+  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", "-", "false", "true",real, number, identifier, extIdentifier, id}
   spaces { $[ \t]+ }
   newline { "\n" }
   eof { @eof }
   Comment { "#" ![\n]+ }
   string { ('"' (!["\\] | "\\" _)* '"')  }
-  identifier { "-"? $[a-zA-Z0-9_]+ }
+  identifier { ("-"? $[a-zA-Z0-9_])+ }
+  extIdentifier { "'" $[a-zA-Z0-9_]+ "'" }
   id { "'" "-"? $[0-9]+ "'" }
   number { $[0-9]+ }
   real { $[0-9]+ "." $[0-9]+}
