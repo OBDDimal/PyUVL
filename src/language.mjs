@@ -51,15 +51,9 @@ function constraintAutocomplete(context) {
     }
     let nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
     if (nodeBefore.name === "ConstraintItem") {
-        //then suggest | and =>
-        //ToDo fix
         return {
             from: context.pos,
             options: [
-                //ToDO check | => &
-                { label: " |", type: "operator" },
-                { label: " =>", type: "operator" },
-                { label: " &", type: "operator" },
                 { label: "sum()", type: "function" },
                 { label: "len()", type: "function" },
                 { label: "avg()", type: "function" }
