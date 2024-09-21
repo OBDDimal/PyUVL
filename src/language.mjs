@@ -195,6 +195,18 @@ export const customLinter = linter(view => {
                         attributeItemNode.getChildren("AttributeSelection").forEach(selectionNode => {
                             selectionNode.getChildren("Key").forEach(keyNode => {
                                 let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
+                                let valueNode = selectionNode.getChild("Value"); // Assuming a "Value" node exists
+                                let valueText = valueNode ? view.state.doc.sliceString(valueNode.from, valueNode.to).trim() : null;
+
+                                // Determine if the value is a number (integer/float) or a string
+                                let valueType;
+                                if (valueText !== null) {
+                                    if (!(Number.isNaN(valueText))) {
+                                        valueType = Number.isInteger(parseFloat(valueText)) ? 'Integer' : 'Float';
+                                    } else {
+                                        valueType = "String";
+                                    }
+                                }
 
                                 // Check if the key already exists in the keySet
                                 if (keySet.has(keyText)) {
@@ -206,7 +218,7 @@ export const customLinter = linter(view => {
                                     });
                                 } else {
                                     keySet.add(keyText); // Add key to the set
-                                    keys.push(keyText);  // Also add key to the keys list
+                                    keys.push({key: keyText, valueType: valueType});  // Also add key to the keys list
                                 }
                             });
                         });
@@ -328,10 +340,21 @@ export const customLinter = linter(view => {
                 if (keyNode) {
                     let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
 
-                    //Only for keys
                     let allKeys = [];
-                    featureKeysMap.forEach(keysArray => {
-                        allKeys = allKeys.concat(keysArray); // Alle Keys aus der Map sammeln
+                    let keyTypeMap = new Map(); // To store the key and its type
+
+                    featureKeysMap.forEach(value => {
+                        if (Array.isArray(value)) {
+                            // If it's an array, iterate through it
+                            value.forEach(keyObj => {
+                                allKeys.push(keyObj.key); // Collect all keys
+                                keyTypeMap.set(keyObj.key, keyObj.valueType); // Map the key to its value type
+                            });
+                        } else {
+                            // If it's a single object (not an array)
+                            allKeys.push(value.key); // Collect the key
+                            keyTypeMap.set(value.key, value.valueType); // Map the key to its value type
+                        }
                     });
                     if (!allKeys.includes(keyText)) {
                         diagnostics.push({
@@ -340,6 +363,44 @@ export const customLinter = linter(view => {
                             severity: "error",
                             message: `"${keyText}" is not a valid key.`
                         });
+                    } else {
+                        // Check the operation name
+                        let operationText = view.state.doc.sliceString(operationNode.from, operationNode.to).trim();
+
+                        // Extract the function name (e.g. avg, sum, len)
+                        let functionName = operationText.split('(')[0].trim();
+
+                        let valueType;
+                        for (let [feature, keys] of featureKeysMap.entries()) {
+                            if (Array.isArray(keys)) {
+                                keys.forEach(keyObj => {
+                                    if (keyObj.key === keyText) {
+                                        valueType = keyObj.valueType;
+                                    }
+                                });
+                            }
+                        }
+
+                        if (functionName === 'avg' || functionName === 'sum') {
+                            if (valueType !== 'Integer' && valueType !== 'Float') {
+                                diagnostics.push({
+                                    from: keyNode.from,
+                                    to: keyNode.to,
+                                    severity: "error",
+                                    message: `"${keyText}" must be a number for the ${functionName} operation.`
+                                });
+                            }
+                        } else if (functionName === 'len') {
+                            if (valueType !== 'String') {
+                                diagnostics.push({
+                                    from: keyNode.from,
+                                    to: keyNode.to,
+                                    severity: "error",
+                                    message: `"${keyText}" must be a string for the len operation.`
+                                });
+                            }
+                        }
+
                     }
                 }
             });
@@ -354,11 +415,19 @@ export const customLinter = linter(view => {
                 let isId = /^'-?\d+'$/.test(constraintItemText);
 
                 let [feature, key] = constraintItemText.split(".");
-                // Check if it's a valid feature
+
+// Check if it's a valid feature
                 if (featureKeysMap.has(feature)) {
+                    // Get the list of keys and their types for the feature
+                    let featureEntries = featureKeysMap.get(feature);
+
                     // If a key is provided, check if it's a valid key for this feature
                     if (key) {
-                        let validKeys = featureKeysMap.get(feature);
+                        // Extract all keys from the featureEntries
+                        let validKeys = Array.isArray(featureEntries)
+                            ? featureEntries.map(entry => entry.key) // Extract the keys from the array
+                            : [featureEntries.key]; // Single entry case
+
                         if (!validKeys.includes(key)) {
                             diagnostics.push({
                                 from: constraintItemNode.from,
@@ -368,7 +437,8 @@ export const customLinter = linter(view => {
                             });
                         }
                     }
-                } else if (!isId && !featureKeysMap.has(constraintItemText)) {
+                }
+                else if (!isId && !featureKeysMap.has(constraintItemText)) {
                         diagnostics.push({
                             from: constraintItemNode.from,
                             to: constraintItemNode.to,
