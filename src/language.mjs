@@ -469,13 +469,13 @@ export const customLinter = linter(view => {
 
 //creating a language with the extended parser
 //integration. Could be fused with the export
-const myLanguage = LRLanguage.define({
+export const UVLLanguage = LRLanguage.define({
     parser: parserWithMetadata
 });
 
 //custom highlighting
 //final support containing the parser and highlighting. Could be merged with autocompletion
-export const UVLLanguageSupport = new LanguageSupport(myLanguage, [
+export const UVLLanguageSupport = new LanguageSupport(UVLLanguage, [
     syntaxHighlighting(customHighlightStyle)
 ]);
 

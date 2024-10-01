@@ -1,6 +1,5 @@
-import { parser } from '../src/parser.mjs';
+import { UVLLanguage } from '../src/language.mjs';
 import * as fs from 'fs';
-import { readdirSync, readFileSync } from 'fs';
 import * as path from 'path';
 import assert from 'assert';
 import { fileURLToPath } from 'url';
@@ -43,7 +42,7 @@ describe('Parser Tests', () => {
 
             let parseTree;
             try {
-                parseTree = parser.parse(inputContent); // Parse the file
+                parseTree = UVLLanguage.parser.parse(inputContent); // Use UVLLanguage.parser to parse the file
 
                 if (isFaulty) {
                     assert.fail(`Expected parsing to fail for faulty test ${file}, but it succeeded.`);

@@ -124,6 +124,7 @@ lineEnd { newline | eof }
 //!tokens
 @tokens {
   @precedence {
+
     "cardinality",
     "avg",
     "len",
