@@ -10,31 +10,11 @@ import { LRLanguage, syntaxHighlighting } from '@codemirror/language';
 import {autocompletion} from "@codemirror/autocomplete";
 import { linter } from "@codemirror/lint";
 
-//autocompletion for FeatureNames
-//ToDO remove in next patch
-function customAutocomplete(context) {
-    let word = context.matchBefore(/\w*/);
-    const blacklist = new Set(["mandatory", "or", "optional", "alternative", "{abstract}"]);
-    if (word.from === word.to && !context.explicit)
-        return null;
-    let text = context.state.doc.toString();
-    let tokens = new Set(text.match(/\b\w+\b/g));
-    // create List
-    let options = [...tokens]
-        .filter(token => !blacklist.has(token))
-        .map(token => ({
-        label: token,
-        type: "keyword"
-    }));
+import {ConstraintsSection, OpenBracket, Root, Signs} from "./parser.terms.mjs";
 
-    return {
-        from: word.from,
-        options
-    };
-}
 //autocompletion for keywords with a line break
 function standardAutocomplete(context) {
-    const keywords = ["features", "{abstract}", "mandatory", "optional", "alternative", "or", "constraints"];
+    const keywords = ["mandatory", "optional", "alternative", "or", "constraints"];
     let word = context.matchBefore(/\w*/);
     if (word.from === word.to && !context.explicit)
         return null;
@@ -51,27 +31,7 @@ function standardAutocomplete(context) {
         validFor: /^\w*$/
     };
 }
-//constraints autocompletion
-//ToDO outdated: remove or change in next patch
-function constraintAutocomplete2(context) {
-    let word = context.matchBefore(/\w*/);
-    if (word.from === word.to && !context.explicit) return null;
-    let nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
-    if (nodeBefore.name === "ConstraintItem") {
-        // then suggest | and =>
-        return {
-            from: context.pos,
-            options: [
-                { label: " |", type: "operator" },
-                { label: " =>", type: "operator" },
-                { label: " &", type: "operator" }
-            ],
-            validFor: /^[|=>&]*$/ // valid for
-        };
-    }
-//no suggestion
-    return null;
-}
+
 function constraintAutocomplete(context) {
     let word = context.matchBefore(/\w*/);
     if (word.from === word.to && !context.explicit) return null;
@@ -93,14 +53,9 @@ function constraintAutocomplete(context) {
     }
     let nodeBefore = syntaxTree(context.state).resolveInner(context.pos, -1);
     if (nodeBefore.name === "ConstraintItem") {
-        //then suggest | and =>
-        //ToDo fix
         return {
             from: context.pos,
             options: [
-                { label: " |", type: "operator" },
-                { label: " =>", type: "operator" },
-                { label: " &", type: "operator" },
                 { label: "sum()", type: "function" },
                 { label: "len()", type: "function" },
                 { label: "avg()", type: "function" }
@@ -111,9 +66,6 @@ function constraintAutocomplete(context) {
     return null;
 }
 
-
-
-
 //using unused predefined token to create a color template for the language
 const customHighlightStyle = HighlightStyle.define([
     { tag: t.keyword, color: "#008080", fontWeight: "bold" },
@@ -121,27 +73,7 @@ const customHighlightStyle = HighlightStyle.define([
     { tag: t.tagName, color: "#0022ff", fontWeight: "bold"},
     { tag: t.operator, color: "#404080"},
     { tag: t.bracket, color: "#ae2eae", fontWeight: "bold"},
-    // up old down new
-/*
-//Current theme
-    { tag: t.labelName, color: "#60B0FF"},
-    { tag: t.labelName, color: "#B0FFF0"},
-    { tag: t.labelName, color: "#60B0FF"},
-    { tag: t.labelName, color: "#8080A0"},
-    { tag: t.labelName, color: "#7090B0"},
-    { tag: t.labelName, color: "#999999"}, //undefined
-    { tag: t.labelName, color: "#404080"}, //comment
-    { tag: t.labelName, color: "#60B0FF"},
-    { tag: t.labelName, color: "#A0A0FF"}, //operator
-    { tag: t.labelName, color: "#008080"},
-    { tag: t.labelName, color: "#A0A0FF"},
-    { tag: t.labelName, color: "#80A0FF"},
-    { tag: t.labelName, color: "#70E080"},
-    { tag: t.labelName, color: "#50A0A0"},
-    { tag: t.labelName, color: "#009090"},
-    { tag: t.labelName, color: "#B0FFF0"},
-    { tag: t.labelName, color: "#D0D0FF"},
- */
+    { tag: t.className, color: "#830505", fontWeight: "bold"}
 ]);
 
 //connecting Token form parser to the color template. Folding and all the other logic is designed to be here
@@ -156,6 +88,7 @@ let parserWithMetadata = parser.configure({
             Value: t.keyword,
             Number: t.keyword,
             FeatureModel: t.keyword,
+            ImportName: t.keyword,
             //tagName colour
             State: t.tagName,
             Neg: t.keyword,
@@ -163,6 +96,10 @@ let parserWithMetadata = parser.configure({
             Operator: t.tagName,
             ConstraintSign: t.tagName,
             Cardinality: t.tagName,
+            Key: t.tagName,
+            Max: t.tagName,
+            Min: t.tagName,
+            Specifier: t.tagName,
             AbstractFeature: t.tagName,
             //labelName colour not defined
             Brackets: t.bracket,
@@ -170,6 +107,9 @@ let parserWithMetadata = parser.configure({
             Type: t.bracket,
             //typeName colour
             ConstraintItem: t.typeName,
+            //className
+            ConstraintsSection: t.className,
+            Root: t.className,
             //other
             LineComment: t.lineComment,
         }),
@@ -182,15 +122,22 @@ export const customLinter = linter(view => {
     const list = [
         "indent",
         "dedent",
+        "FeaturesSection",
+        "ConstraintsSection",
         "blankLineStart",
         "Comment",
         "Tree",
-        "FeatureBlock",
+        "IncludeBlock",
+        "ImportBlock",
         "Feature",
+        "ImportFeature",
+        "ImportName",
+        "Specifier",
+        "Root",
+        "FeatureBlock",
         "ExtendedFeature",
         "Type",
         "Cardinality",
-        "Number",
         "Min",
         "Max",
         "AttributeItem",
@@ -200,33 +147,114 @@ export const customLinter = linter(view => {
         "StateFeature",
         "StateBlock",
         "State",
+        "Counter",
         "ConstraintsBlock",
         "Constraints",
         "Operation",
-        "Attribute",
-        "Operator",
+        "Signs",
+        "Number",
+        "OpenBracket",
+        "NumericOperator",
+        "CloseBracket",
         "ConstraintSign",
         "ConstraintsItem",
-        "Neg",
+        "BooleanNeg",
+        "BracketItem",
+        "SymbolicOperator",
         "Brackets"
     ]
 
+    //constraints preparation. Collecting keys and mapping to features
+    let featureKeysMap = new Map();
+
     syntaxTree(view.state).cursor().iterate(node => {
-        //blacklist
-        if (!list.includes(node.name) || node.node === "RegExp") {
-            diagnostics.push({
-                from: node.from,
-                to: node.to,
-                severity: "error",
-                message: "Regular expressions are FORBIDDEN",
-                actions: [{
-                    name: "Remove",
-                    apply(view, from, to) { view.dispatch({ changes: { from, to } }) }
-                }]
-            });
+        if (node.name === "ExtendedFeature") {
+            let featureNode = node.node.getChild("Feature");
+            let attributeItemNode = node.node.getChild("AttributeItem");
+
+            if (featureNode) {
+                let featureText = view.state.doc.sliceString(featureNode.from, featureNode.to).trim();
+
+                // Check if the feature is already in the map
+                if (featureKeysMap.has(featureText)) {
+                    diagnostics.push({
+                        from: featureNode.from,
+                        to: featureNode.to,
+                        severity: "error",
+                        message: `The feature "${featureText}" is defined more than once.`
+                    });
+                } else {
+                    if (attributeItemNode) {
+                        let keys = [];
+                        let keySet = new Set(); // To check for duplicate keys
+
+                        attributeItemNode.getChildren("AttributeSelection").forEach(selectionNode => {
+                            selectionNode.getChildren("Key").forEach(keyNode => {
+                                let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
+                                let valueNode = selectionNode.getChild("Value"); // Assuming a "Value" node exists
+                                let valueText = valueNode ? view.state.doc.sliceString(valueNode.from, valueNode.to).trim() : null;
+
+                                // Determine if the value is a number (integer/float) or a string
+                                let valueType;
+                                if (valueText !== null) {
+                                    if (!(Number.isNaN(valueText))) {
+                                        valueType = Number.isInteger(parseFloat(valueText)) ? 'Integer' : 'Float';
+                                    } else {
+                                        valueType = "String";
+                                    }
+                                }
+
+                                // Check if the key already exists in the keySet
+                                if (keySet.has(keyText)) {
+                                    diagnostics.push({
+                                        from: keyNode.from,
+                                        to: keyNode.to,
+                                        severity: "error",
+                                        message: `The key "${keyText}" is duplicated in the feature "${featureText}".`
+                                    });
+                                } else {
+                                    keySet.add(keyText); // Add key to the set
+                                    keys.push({key: keyText, valueType: valueType});  // Also add key to the keys list
+                                }
+                            });
+                        });
+
+                        featureKeysMap.set(featureText, keys);
+                    } else {
+                        featureKeysMap.set(featureText, "");
+                    }
+                }
+            }
         }
-        // cardinality [Min..Max]
-        if (node.name === "Cardinality") {
+    });
+    syntaxTree(view.state).cursor().iterate(node => {
+        if (node.name === "ConstraintsSection") {
+            let blockText = view.state.doc.sliceString(node.from, node.to).trim();
+            let firstWord = blockText.split(/\s+/)[0];
+            if (firstWord !== "constraints") {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: 'The ConstraintsBlock must start with "constraints".'
+                });
+            }
+        } else if (node.name === "FeaturesSection") {
+            let blockText = view.state.doc.sliceString(node.from, node.to).trim();
+            let firstWord = blockText.split(/\s+/)[0];
+            if (firstWord !== "features") {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: 'The FeaturesSection must start with "features".'
+                });
+            }
+        }
+    });
+    syntaxTree(view.state).cursor().iterate(node => {
+        //cardinality [Min..Max]
+        if (node.name === "Cardinality" || node.name === "Counter") {
             const text = view.state.doc.sliceString(node.from, node.to);
             const match = text.match(/\[\s*(\d+)\s*\.\.\s*(\d+)\s*\]/);
 
@@ -234,16 +262,207 @@ export const customLinter = linter(view => {
                 let min = parseInt(match[1], 10);
                 let max = parseInt(match[2], 10);
 
-                if (min >= max) {
+                if (min > max) {
                     // Max Min error
                     diagnostics.push({
                         from: node.from,
                         to: node.to,
                         severity: "error",
-                        message: `Invalid cardinality: Min (${min}) must be less than Max (${max})`,
+                        message: `Invalid syntax: Min (${min}) must be less than Max (${max})`,
+                    });
+                }
+            } else {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: `The pattern is number1 .. number2.`,
+                });
+            }
+        } else if (node.name === "ExtendedFeature") {
+            let featureNode = node.node.getChild("Feature");
+            let attributeNode = node.node.getChild("AttributeItem");
+            if (featureNode) {
+                let featureText = view.state.doc.sliceString(featureNode.from, featureNode.to);
+                let keywords = ["features", "constraints"];
+                //"constraints" is still buggy
+                if (keywords.includes(featureText)) {
+                    diagnostics.push({
+                        from: featureNode.from,
+                        to: featureNode.to,
+                        severity: "error",
+                        message: `The text "${featureText}" is not allowed in the Feature node`,
+                        actions: [{
+                            name: "Remove 'features'",
+                            apply(view, from, to) { view.dispatch({changes: {from, to, insert: ''}}); }
+                        }]
                     });
                 }
             }
+            if (attributeNode) {
+                attributeNode.getChildren("AttributeSelection").forEach(selectionNode => {
+                    let valueNode = selectionNode.getChild("Value");
+                    if (valueNode) {
+                        let valueText = view.state.doc.sliceString(valueNode.from, valueNode.to);
+                        if (!/^-?\d+$/.test(valueText) && !/^["].*["]$/.test(valueText) && !/^'[a-zA-Z_]\w*'$/.test(valueText)) {
+                            diagnostics.push({
+                                from: valueNode.from,
+                                to: valueNode.to,
+                                severity: "error",
+                                message: "Value must be a number, a string in double quotes, or an identifier in single quotes."
+                            });
+                        }
+                    }
+                });
+            }
+        }
+        //brackets not matching
+        else if (node.name === "Constraints") {
+            let constraintText = view.state.doc.sliceString(node.from, node.to);
+
+            let openBrackets = (constraintText.match(/\(/g) || []).length;
+            let closeBrackets = (constraintText.match(/\)/g) || []).length;
+
+            if (openBrackets > 1 || closeBrackets > 1) {
+                diagnostics.push({
+                    from: node.from,
+                    to: node.to,
+                    severity: "error",
+                    message: "A constraint can only have one pair of parentheses."
+                });
+            }
+            node.node.getChildren("Operation").forEach(operationNode => {
+                let keyNode = operationNode.getChild("Key");
+                if (keyNode) {
+                    let keyText = view.state.doc.sliceString(keyNode.from, keyNode.to).trim();
+
+                    let allKeys = [];
+                    let keyTypeMap = new Map(); // To store the key and its type
+
+                    featureKeysMap.forEach(value => {
+                        if (Array.isArray(value)) {
+                            // If it's an array, iterate through it
+                            value.forEach(keyObj => {
+                                allKeys.push(keyObj.key); // Collect all keys
+                                keyTypeMap.set(keyObj.key, keyObj.valueType); // Map the key to its value type
+                            });
+                        } else {
+                            // If it's a single object (not an array)
+                            allKeys.push(value.key); // Collect the key
+                            keyTypeMap.set(value.key, value.valueType); // Map the key to its value type
+                        }
+                    });
+                    if (!allKeys.includes(keyText)) {
+                        diagnostics.push({
+                            from: keyNode.from,
+                            to: keyNode.to,
+                            severity: "error",
+                            message: `"${keyText}" is not a valid key.`
+                        });
+                    } else {
+                        // Check the operation name
+                        let operationText = view.state.doc.sliceString(operationNode.from, operationNode.to).trim();
+
+                        // Extract the function name (e.g. avg, sum, len)
+                        let functionName = operationText.split('(')[0].trim();
+
+                        let valueType;
+                        for (let [feature, keys] of featureKeysMap.entries()) {
+                            if (Array.isArray(keys)) {
+                                keys.forEach(keyObj => {
+                                    if (keyObj.key === keyText) {
+                                        valueType = keyObj.valueType;
+                                    }
+                                });
+                            }
+                        }
+
+                        if (functionName === 'avg' || functionName === 'sum') {
+                            if (valueType !== 'Integer' && valueType !== 'Float') {
+                                diagnostics.push({
+                                    from: keyNode.from,
+                                    to: keyNode.to,
+                                    severity: "error",
+                                    message: `"${keyText}" must be a number for the ${functionName} operation.`
+                                });
+                            }
+                        } else if (functionName === 'len') {
+                            if (valueType !== 'String') {
+                                diagnostics.push({
+                                    from: keyNode.from,
+                                    to: keyNode.to,
+                                    severity: "error",
+                                    message: `"${keyText}" must be a string for the len operation.`
+                                });
+                            }
+                        }
+
+                    }
+                }
+            });
+            node.node.getChildren("ConstraintsItem").forEach(constraintItemNode => {
+                let constraintItemText = view.state.doc.sliceString(constraintItemNode.from, constraintItemNode.to).trim();
+
+                // Remove '!' from Feature
+                let isNegated = constraintItemText.startsWith("!");
+                if (isNegated) {
+                    constraintItemText = constraintItemText.slice(1).trim();
+                }
+                let isId = /^'-?\d+'$/.test(constraintItemText);
+
+                let [feature, key] = constraintItemText.split(".");
+
+// Check if it's a valid feature
+                if (featureKeysMap.has(feature)) {
+                    // Get the list of keys and their types for the feature
+                    let featureEntries = featureKeysMap.get(feature);
+
+                    // If a key is provided, check if it's a valid key for this feature
+                    if (key) {
+                        // Extract all keys from the featureEntries
+                        let validKeys = Array.isArray(featureEntries)
+                            ? featureEntries.map(entry => entry.key) // Extract the keys from the array
+                            : [featureEntries.key]; // Single entry case
+
+                        if (!validKeys.includes(key)) {
+                            diagnostics.push({
+                                from: constraintItemNode.from,
+                                to: constraintItemNode.to,
+                                severity: "error",
+                                message: `"${key}" is not a valid key for the feature "${feature}".`
+                            });
+                        }
+                    }
+                }
+                else if (!isId && !featureKeysMap.has(constraintItemText)) {
+                        diagnostics.push({
+                            from: constraintItemNode.from,
+                            to: constraintItemNode.to,
+                            severity: "error",
+                            message: `"${constraintItemText}" is neither a valid ID nor a declared feature.`
+                        });
+                    let words = constraintItemText.trim().split(/\s+/);
+                        words.forEach(word => {
+                            if (featureKeysMap.has(word)) {
+                                diagnostics.push({
+                                    from: constraintItemNode.from,
+                                    to: constraintItemNode.to,
+                                    severity: "error",
+                                    message: `"${word}" has to be seperated by an operator.`
+                                });
+                            }
+                        });
+                }
+            });
+        }
+        //blacklist and unrecognized
+        if (!list.includes(node.name)) {
+            diagnostics.push({
+                from: node.from,
+                to: node.to,
+                severity: "error",
+                message: "Features have to be connected with \" or ' ",
+            });
         }
     });
 
@@ -252,13 +471,15 @@ export const customLinter = linter(view => {
 
 //creating a language with the extended parser
 //integration. Could be fused with the export
-const myLanguage = LRLanguage.define({
+
+export const UVLLanguage = LRLanguage.define({
     parser: parserWithMetadata
 });
 
 //custom highlighting
 //final support containing the parser and highlighting. Could be merged with autocompletion
-export const UVLLanguageSupport = new LanguageSupport(myLanguage, [
+
+export const UVLLanguageSupport = new LanguageSupport(UVLLanguage, [
     syntaxHighlighting(customHighlightStyle)
 ]);
 

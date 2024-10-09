@@ -1,62 +1,106 @@
-@precedence { first @left, last @left}
+@precedence { first @left, last @left, only @left}
 
-@top Tree { featuresSection constraintsSection? }
+@top Tree { (namespaceSection | includeSection | importSection)? FeaturesSection ConstraintsSection? }
 
-featuresSection {identifier lineEnd FeatureBlock }
+//! pre-feature sections
+namespaceSection { "namespace" identifier lineEnd }
 
-StateFeature { ExtendedFeature lineEnd StateBlock }
-Feature { (identifier | string) }
-ExtendedFeature {ReqExp? Type? Feature ReqExp? Cardinality? AttributeItem?}
-Type { "Integer" | "String" | "Real" | "Boolean"}
-AttributeItem {!first "{" list<AttributeSelection> "}"}
-Cardinality {!last "cardinality " "[" Min ".." Max "]"}
-Min {number}
-Max {number}
+//! importing Features from outside the file
+importSection { "imports" lineEnd ImportBlock}
+ImportFeature { ImportName ("."  Specifier)+}
+ImportName { (identifier | string) }
+Specifier { (identifier | string) }
+ImportBlock { indent (((Feature | ImportFeature) ("as" Feature)?) lineEnd)+  (dedent | eof) }
 
-AttributeSelection { Key Value? }
-Key { identifier | string }
-Value { number | string | "'" identifier "'"}
+//! including levels
+includeSection { "include" lineEnd IncludeBlock}
+IncludeBlock { indent (include ("." (identifier | "*"))? lineEnd)+  (dedent | eof) }
+include {
+  "Boolean" |
+  "Arithmetic" |
+  "Type"
+}
 
-//!utilty
-ReqExp { !last (identifier | string) }
-list<item> { item ("," item)* }
+//! feature section
+FeaturesSection { Root lineEnd FeatureBlock }
+Root { "features" }
+
+//! state features
+StateFeature { !last ExtendedFeature lineEnd StateBlock }
+StateBlock { indent  (State lineEnd FeatureBlock)+ (dedent | eof) }
 
 State{
   ("mandatory"
    | "optional"
    | "alternative"
-   | "or")
+   | "or"
+   | Counter)
 }
+
+//! feature base
+ExtendedFeature {!first Type? (Feature | ImportFeature) ReqExp? Cardinality? AttributeItem? }
+Feature { (identifier | string) }
+FeatureBlock { indent (ExtendedFeature lineEnd | StateFeature)+  (dedent | eof) }
+ReqExp { !last (identifier | string) }
+
+
+
+//! Min Max
+Cardinality {!last "cardinality" "[" Min ".." Max "]"}
+Counter { !first "[" Min ".." Max "]" }
+Min {unsignedInteger}
+Max {unsignedInteger}
+
+//! list
+AttributeItem {!first "{" list<AttributeSelection> "}"}
+AttributeSelection { Key Value? }
+Key { identifier | string | "'" identifier "'" }
+Value { integer | unsignedInteger | string  | boolean | ("-"? real) | AttributeItem | identifier}
+list<item> { item ("," item)* }
+
+
 
 //!constraints section
-constraintsSection { "constraints" lineEnd ConstraintsBlock+ }
+ConstraintsSection { "constraints" lineEnd ConstraintsBlock+ }
+ConstraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
 
-ConstraintSign { "|" | "=>" | "&" | "==" }
-ConstraintsItem { Neg? (identifier | string) }
-Neg { "!" }
-Brackets { "(" Constraints ")" }
-Number { number }
+ConstraintSign { "|" | "=>" | "&" | "==" | "<=>" | "!="}
+ConstraintsItem { BooleanNeg? ((identifier | string | id ) | ImportFeature) | BracketItem }
+
+BracketItem { OpenBracket ConstraintsItem CloseBracket }
+Brackets { !first OpenBracket Constraints CloseBracket }
+
+
+BooleanNeg { "!" }
+OpenBracket { "(" }
+CloseBracket { ")" }
+
+Number { integer | unsignedInteger | numericTerm }
+numericTerm { OpenBracket Number NumericOperator Number CloseBracket }
 
 Constraints {
-  (!last Operation Operator Number (ConstraintSign ConstraintsItem)?) |
-  (!last ConstraintsItem ConstraintSign ConstraintsItem) |
-  (!first ConstraintsItem ConstraintSign Constraints) |
-  (!first Constraints ConstraintSign ConstraintsItem) |
-  (!first Constraints ConstraintSign Constraints) |
-  (Neg? Brackets)
+  (!last Operation (Signs) Number (ConstraintSign ConstraintsItem)?) |
+  (!first ConstraintsItem ConstraintSign ConstraintsItem) |
+  (!last ConstraintsItem ConstraintSign Constraints) |
+  (!first Constraints ConstraintSign (ConstraintsItem | Constraints | (integer | unsignedInteger)) ) |
+  (!first (Constraints | ConstraintsItem) SymbolicOperator Number) |
+  (!last ConstraintsItem SymbolicOperator ConstraintsItem Signs ConstraintsItem) |
+  (!last ConstraintsItem ConstraintSign (integer | unsignedInteger) ) |
+  (!last (ConstraintsItem | Constraints) NumericOperator (ConstraintsItem | Constraints) ) |
+  (!only ConstraintsItem) |
+  (!last (ConstraintsItem | Constraints) SymbolicOperator ConstraintsItem) |
+  (BooleanNeg? Brackets)
 }
 
-Operation { sum | avg | lenExpr}
-lenExpr {"len" "(" Attribute ")" }
-sum {"sum" "(" Attribute ")"}
-avg { "avg" "(" Attribute ")"}
-Operator { "+" | "-" | "*" | "/" | "==" | ">" | ">=" }
-Attribute { identifier | string }
+//! functions
+Operation {!first (sum | avg | lenExpr)}
+lenExpr {"len" "(" Key ")" }
+sum {"sum" "(" Key ")"}
+avg { "avg" "(" Key ")"}
 
-//!block
-StateBlock { indent  (State lineEnd FeatureBlock)+ (dedent | eof) }
-FeatureBlock { indent (ExtendedFeature lineEnd | StateFeature)+  (dedent | eof) }
-ConstraintsBlock {indent (Constraints lineEnd)+ (dedent | eof)}
+SymbolicOperator { ">" | "<"}
+NumericOperator { "+" | "-" | "*" | "/" }
+Signs { "<" | ">" | "==" | "=<" | "<=" }
 
 //!skip
 @skip {
@@ -79,12 +123,37 @@ lineEnd { newline | eof }
 }
 //!tokens
 @tokens {
-  @precedence {"mandatory", "optional", "alternative", "or", "constraints", "cardinality ","sum", "avg", "Integer", "Real","String", "Boolean","len", number, identifier}
+  @precedence {
+
+    "cardinality",
+    "avg",
+    "len",
+    "sum",
+    integer,
+    "-",
+    Type,
+    boolean,
+    unsignedInteger,
+    real,
+    id,
+    string,
+    identifier
+  }
   spaces { $[ \t]+ }
   newline { "\n" }
   eof { @eof }
   Comment { "#" ![\n]+ }
-  string { '"' (!["\\] | "\\" _)* '"' }
-  identifier { $[a-zA-Z0-9_]+ }
-  number { $[0-9]+ }
+  string {
+    "\"" (!["\\] | "\\" _)*
+    "\"" |
+    "'" (!['\\] | "\\" _)*
+    "'"
+  }
+  identifier { ("-"? $[a-zA-Z0-9_])+ }
+  id { "'" "-"? $[0-9]+ "'" }
+  unsignedInteger { $[0-9]+ }
+  integer { "-" unsignedInteger }
+  real { $[0-9]+ "." $[0-9]+}
+  boolean { "true" | "false" }
+  Type { "Integer" | "String" | "Real" | "Boolean"}
 }	
